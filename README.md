@@ -7,7 +7,7 @@ Portland State University
 
 ## Description
 The minimum semidefinite rank problem seeks the minimum rank of a square,
-symmetric, positive semidefinite subject sparsity constraints.
+symmetric, positive semidefinite matrix subject sparsity constraints.
 That is, we seek $\min\text{rank}(A)$ such that $A \succeq0$ with
 $A_{ij} \neq 0$ for $ij \in E$ and
 $A_{ij} = 0$ for $ij \notin E$ and $i\neq j$.

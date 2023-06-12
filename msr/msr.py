@@ -1,4 +1,4 @@
-from numpy.linalg import svd
+from numpy.linalg import svd, norm
 from numpy import sqrt, set_printoptions
 import cvxpy as cp
 from .graph import graph
@@ -37,8 +37,13 @@ def msr(G: graph, tol: float=1e-4, debug=False):
 	prob = cp.Problem(cp.Minimize(cp.trace(X)), constraints)
 	prob.solve()
 
+	# verify that ||X|| <= 1
+	Xnorm = norm(X.value, 'fro')
+	if Xnorm > 1:
+		raise Warning('||X|| > 1, suboptimal solution likely')
+
 	# find singular values of X
-	_, sigma, _ = svd(X.value)
+	sigma = svd(X.value, compute_uv=False)
 
 	if debug:
 		set_printoptions(precision=2)
