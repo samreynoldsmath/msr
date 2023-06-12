@@ -1,4 +1,5 @@
 from .graph import graph
+from .vert6 import six_verts
 
 def empty(num_vert: int) -> graph:
 	return graph(num_vert, [])
@@ -28,16 +29,17 @@ def wheel(num_vert: int) -> graph:
 		G.add_edge([i, num_vert])
 	return G
 
+def star(num_vert: int) -> graph:
+	G = graph(num_vert, [])
+	for i in range(1, num_vert):
+		G.add_edge([i, num_vert])
+	return G
+
 def house() -> graph:
 	G = cycle(num_vert=5)
 	G.add_edge([2, 5])
 	return G
 
 def triforce() -> graph:
-	G = cycle(num_vert=6)
-	G.add_edges([
-		[1, 3],
-		[3, 5],
-		[5, 1]
-	])
+	G, _ = six_verts(idx=42)
 	return G

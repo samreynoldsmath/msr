@@ -24,6 +24,6 @@ def draw_embedding(x, E):
     for edge in E:
         u = edge[0] - 1
         v = edge[1] - 1
-        plt.plot(x[[u, v], 0],x[[u, v], 1], 'k')
+        plt.plot(x[[u, v], 0], x[[u, v], 1], 'k')
     for i in range(x.shape[0]):
         plt.text(x[i, 0] + 0.05, x[i, 1] + 0.05, '%d'%(i + 1))

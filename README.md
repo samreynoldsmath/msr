@@ -34,6 +34,7 @@ nonnegative entries.
 This project is written in Python 3.10 and uses the following packages:
 * numpy
 * cvxpy
+* matplotlib
 
 ## Comments
 * This repository is part of a final project for MTH 610, Spring 2023.
