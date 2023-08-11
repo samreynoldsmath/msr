@@ -1,3 +1,10 @@
+import sys
+import os
+
+current_dir = os.getcwd()
+parent_dir = os.path.abspath(os.path.join(current_dir, ".."))
+sys.path.append(parent_dir)
+
 import msr
 
 def main():
@@ -9,44 +16,43 @@ def main():
 
 def four_cycle_example():
 	print('Four cycle:')
-	G = msr.graph_lib.cycle(4)
+	G = msr.graph.graph_lib.cycle(4)
 	d = 2
-	r = msr.msr(G, debug=True)
+	r = msr.msr_sdp_upper_bound(G, debug=True)
 	print('\tExact \t', d)
 	print('\tApprox \t', r)
 
 def five_cycle_example():
 	print('Five cycle:')
-	G = msr.graph_lib.cycle(5)
+	G = msr.graph.graph_lib.cycle(5)
 	d = 3
-	r = msr.msr(G, debug=True)
+	r = msr.msr_sdp_upper_bound(G, debug=True)
 	print('\tExact \t', d)
 	print('\tApprox \t', r)
 
 def house_example():
 	print('House:')
-	G = msr.graph_lib.cycle(5)
-	G.add_edge([1, 3])
+	G = msr.graph.graph_lib.house()
 	d = 3
-	r = msr.msr(G, debug=True)
+	r = msr.msr_sdp_upper_bound(G, debug=True)
 	print('\tExact \t', d)
 	print('\tApprox \t', r)
 
 def even_chord_example():
 	print('Even chord:')
-	G = msr.graph_lib.cycle(6)
-	G.add_edge([1, 4])
+	G = msr.graph.graph_lib.cycle(6)
+	G.add_edge(1, 4)
 	d = 4
-	r = msr.msr(G, debug=True)
+	r = msr.msr_sdp_upper_bound(G, debug=True)
 	print('\tExact \t', d)
 	print('\tApprox \t', r)
 
 def odd_chord_example():
 	print('Odd chord:')
-	G = msr.graph_lib.cycle(6)
-	G.add_edge([1, 3])
+	G = msr.graph.graph_lib.cycle(6)
+	G.add_edge(1, 3)
 	d = 4
-	r = msr.msr(G, debug=True)
+	r = msr.msr_sdp_upper_bound(G, debug=True)
 	print('\tExact \t', d)
 	print('\tApprox \t', r)
 	print('')

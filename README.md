@@ -1,40 +1,48 @@
 # MSR: Minimum Semidefinite Rank
-Sam Reynolds (2023)
-
-Fariborz Maseeh Department of Mathematics and Statistics
-
-Portland State University
+https://github.com/samreynoldsmath/msr
 
 ## Description
-The minimum semidefinite rank problem seeks the minimum rank of a square,
-symmetric, positive semidefinite matrix subject sparsity constraints.
-That is, we seek $\min\text{rank}(A)$ such that $A \succeq0$ with
-$A_{ij} \neq 0$ for $ij \in E$ and
-$A_{ij} = 0$ for $ij \notin E$ and $i\neq j$.
-Note that the diagonal entries $A_{ii}$ are left arbitrary.
-The *edge set* $E$ can be thought of as the edge set of a simple,
-undirected graph $G$.
-The minimum semidefinite rank of $G$ is denoted by $\text{msr}(G)$.
+Tools to compute the mimimum semidefinite rank of a simple undirected graph.
 
-This project seeks an approximation of $\text{msr}(G)$ using a relaxation
-of the objective function $\text{rank}(A)$ to the trace $\text{tr}(A)$
-and cast the problem as a semidefinite program. Furthermore, the sparsity
-constraints $A_{ij} \neq 0$ for $ij \in E$ are nonconvex, and we instead
-use $A_{ij} \geq \varepsilon$ for some fixed $\varepsilon > 0$.
-By introducing slack variables, the feasible set can be shown to be a
-spectrahedron.
-These constraints are a proper subset of the original sparsity constraints,
-and for some graphs (e.g. the 4-cycle), the SDP returns an estimation of
-$\text{msr}(G)$ that is strictly larger than the exact solution.
-Further investigation is required to determine which types of graphs have
-a minimum rank postive semidefinite generalized adjacency matrix with
-nonnegative entries.
+The minimum semidefinite rank of a graph $G$, denoted by $\text{msr}(G)$, is
+the smallest rank of a positive semidefinite matrix $A$ such that $A$ is a
+generalized adjacency matrix of $G$. A matrix $A$ is a generalized adjacency
+matrix of $G$ if $A_{ij} \neq 0$ if and only if $i \neq j$ and $ij \in E(G)$.
+Equivalently, $\text{msr}(G)$ is the smallest dimension $d$ such that every
+vertex $i$ of $G$ can be assigned to a vector $x_i \in \mathbb{R}^d$ such for
+each $i \neq j$, we have that $x_i \cdot x_j \neq 0$ if and only if
+$ij \in E(G)$. Surprisingly, the graph invariant $\text{msr}(G)$ can often be
+computed only by consideration of the graph structure, without the need to
+actually obtain a positive semidefinite matrix $A$.
+
+## Comments
+- This package began as a school project for a course on semidefinite
+	programming (see the
+	[final report](doc/mth610-semidefprog-final-report-reynolds.pdf)).
+ - In addition to SDP, this package also uses combinatorial techniques to
+	compute bounds on the MSR, some of which are well-known in the literature,
+	and some of which are still under development.
+ - The package uses a custom graph representation, which is unlikely to be
+	compatible with other graph libraries.
+- The package is not designed with efficiency in mind, and probably will not
+	scale well to large graphs.
 
 ## Dependencies
 This project is written in Python 3.10 and uses the following packages:
-* numpy
-* cvxpy
-* matplotlib
+- [cvxpy](https://www.cvxpy.org/) is used to solve semidefinite programs
+- [json](https://docs.python.org/3/library/json.html) is used to save and load
+	graphs
+- [jupyter](https://jupyter.org/) notebooks are used to present examples
+- [logging](https://docs.python.org/3/library/logging.html) is used for
+	logging
+- [matplotlib](https://matplotlib.org/) is used for visualization
+- [numpy](https://numpy.org/) is used for linear algebra
 
-## Comments
-* This repository is part of a final project for MTH 610, Spring 2023.
+## Author
+[Sam Reynolds](https://sites.google.com/view/samreynolds)
+is a PhD student studying Mathematical Sciences at
+[Portland State University](https://www.pdx.edu/math/).
+
+## License
+Copyright (c) 2023 under the
+[MIT license](LICENSE).

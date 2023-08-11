@@ -1,0 +1,233 @@
+class undirected_edge:
+	"""An undirected edge between two vertices."""
+
+	endpoints: set[int]
+
+	def __init__(self, i: int, j: int) -> None:
+		self.set_endpoints(i, j)
+
+	def __str__(self) -> str:
+		return str(self.endpoints)
+
+	def __eq__(self, other) -> bool:
+		return self.endpoints == other.endpoints
+
+	def __hash__(self) -> int:
+		i, j = self.endpoints
+		return hash((i, j))
+
+	def set_endpoints(self, i: int, j: int) -> None:
+		"""Sets the endpoints of the edge to the given vertices."""
+		if not isinstance(i, int) or not isinstance(j, int):
+			raise TypeError('Endpoints must be integers.')
+		if i < 0 or j < 0:
+			raise ValueError('Endpoints cannot be negative.')
+		if i == j:
+			raise ValueError('Loops are not allowed.')
+		self.endpoints = {i, j}
+
+class simple_undirected_graph:
+	"""An simple undirected graph."""
+
+	num_verts: int
+	edges: set[undirected_edge]
+	_is_connected_flag: bool
+
+	def __init__(self, num_verts: int) -> None:
+		self.set_num_verts(num_verts)
+		self.edges = set()
+		self._is_connected_flag = None
+
+	def __str__(self) -> str:
+		s = f'Vertex count: {self.num_verts}'
+		s += '\nNumber of edges: ' + str(self.num_edges())
+		s += '\nEdges:'
+		for e in self.edges:
+			s += '\n' + str(e)
+		return s
+
+	def __copy__(self):
+		G = simple_undirected_graph(self.num_verts)
+		G.edges = self.edges.copy()
+		return G
+
+	### VERTICES ##############################################################
+
+	def set_num_verts(self, num_verts: int) -> None:
+		if num_verts < 1:
+			raise ValueError('Must have a positive number of vertices')
+		self.num_verts = num_verts
+
+	def remove_vert(self, i: int, still_connected: bool=None) -> None:
+		"""Removes the given vertex from the graph."""
+		if self.num_verts < 2:
+			raise ValueError('Cannot remove a vertex from a graph with fewer'
+		    +  'than two vertices.')
+		if i < 0 or i >= self.num_verts:
+			raise ValueError('Vertex index out of bounds.')
+		# remove edges incident to i
+		for j in range(self.num_verts):
+			if self.is_edge(i, j):
+				self.remove_edge(i, j)
+		# shift vertices after i down by one
+		for j in range(i + 1, self.num_verts):
+			for k in range(self.num_verts):
+				if self.is_edge(j, k):
+					self.remove_edge(j, k)
+					self.add_edge(j - 1, k)
+		self.num_verts -= 1
+		self._is_connected_flag = still_connected
+
+	def vert_neighbors(self, i: int) -> set[int]:
+		"""Returns the set of neighbors of the given vertex."""
+		if i < 0 or i >= self.num_verts:
+			raise ValueError('Vertex index out of bounds.')
+		return set([j for j in range(self.num_verts) if self.is_edge(i, j)])
+
+	def vert_deg(self, i: int) -> int:
+		"""Returns the degree of the given vertex."""
+		return len(self.vert_neighbors(i))
+
+	def num_isolated_verts(self) -> int:
+		"""Returns the number of isolated vertices in the graph."""
+		return len([i for i in range(self.num_verts) if self.vert_deg(i) == 0])
+
+	### VERTEX TESTS ##########################################################
+
+	def vert_is_pendant(self, i: int) -> bool:
+		"""Returns True if the given vertex is a pendant vertex."""
+		return self.vert_deg(i) == 1
+
+	def vert_is_subdivided(self, i: int) -> bool:
+		"""Returns True if the given vertex is subdivided."""
+		if self.vert_deg(i) != 2:
+			return False
+		j, k = self.vert_neighbors(i)
+		return not self.is_edge(j, k)
+
+	def vert_is_redundant(self, i: int) -> bool:
+		"""
+		Returns True if the given vertex is adjacent to every other vertex.
+		"""
+		return self.vert_deg(i) == self.num_verts - 1
+
+	def verts_are_duplicate_pair(self, i: int, j: int) -> bool:
+		"""
+		Returns True if i,j are adjacent and have the same neighbors.
+		"""
+		if not self.is_edge(i, j):
+			return False
+		Ni = self.vert_neighbors(i)
+		Ni.remove(j)
+		Nj = self.vert_neighbors(j)
+		Nj.remove(i)
+		return Ni == Nj
+
+	### EDGES #################################################################
+
+	def num_edges(self) -> int:
+		return len(self.edges)
+
+	def add_edge(self, i: int, j: int) -> None:
+		if i > self.num_verts or j > self.num_verts:
+			raise ValueError('Vertex index out of bounds.')
+		self.edges.add(undirected_edge(i, j))
+		self._is_connected_flag = None
+
+	def remove_edge(self, i: int, j: int) -> None:
+		self.edges.remove(undirected_edge(i, j))
+		self._is_connected_flag = None
+
+	def is_edge(self, i: int, j: int) -> bool:
+		if i == j:
+			return False
+		return undirected_edge(i, j) in self.edges
+
+	### COMPONENTS ############################################################
+
+	def connected_components(self) -> list[object]:
+		"""
+		Returns a list of simple_undirected_graph objects, where each object is
+		a connected component of the graph.
+		"""
+		component_vert_idx = self.connected_components_vert_idx()
+		components = []
+		for verts in component_vert_idx:
+			num_verts = len(verts)
+			verts_list = list(verts)
+			H = simple_undirected_graph(num_verts)
+			for i in range(num_verts):
+				for j in range(i + 1, num_verts):
+					if self.is_edge(verts_list[i], verts_list[j]):
+						H.add_edge(i, j)
+			H._is_connected_flag = True
+			components.append(H)
+		return components
+
+	def connected_components_vert_idx(self) -> list[set[int]]:
+		"""
+		Returns a list of set of vertex indices, where each set of vertex
+		indices is a connected component of the graph.
+		"""
+		component_index_list = []
+		visited = set()
+		for i in range(self.num_verts):
+			if not (i in visited):
+				this_component_idx_set = self.bfs(i)
+				visited = visited.union(this_component_idx_set)
+				component_index_list.append(this_component_idx_set)
+		self._is_connected_flag = len(component_index_list) == 1
+		return component_index_list
+
+	def bfs(self, i: int) -> set[int]:
+		"""
+		Returns the set of vertices reachable from the given vertex by a
+		breadth-first search.
+		"""
+		if i < 0 or i >= self.num_verts:
+			raise ValueError('Vertex index out of bounds.')
+		reachable = set([i,])
+		frontier = set([i,])
+		while len(frontier) > 0:
+			new_frontier = set()
+			for j in frontier:
+				for k in self.vert_neighbors(j):
+					if not k in reachable:
+						reachable.add(k)
+						new_frontier.add(k)
+			frontier = new_frontier
+		return reachable
+
+	### GRAPH TESTS ###########################################################
+
+	def is_connected(self) -> bool:
+		"""Returns True if the graph is connected."""
+		if self.num_verts == 1:
+			return True
+		if self._is_connected_flag is None:
+			self.connected_components_vert_idx()
+		return self._is_connected_flag
+
+	def is_empty(self) -> bool:
+		"""Returns True if the graph has no edges."""
+		return self.num_edges() == 0
+
+	def is_complete(self) -> bool:
+		"""Returns True if every vertex is adjacent to every other vertex."""
+		return self.num_edges() == self.num_verts * (self.num_verts - 1) // 2
+
+	def is_a_tree(self) -> bool:
+		"""Returns True if the graph is connected and has no cycles."""
+		if not self.is_connected():
+			return False
+		return self.num_edges() == self.num_verts - 1
+
+	def is_k_regular(self, k: int) -> bool:
+		"""Returns True if every vertex has degree k."""
+		return all(self.vert_deg(i) == k for i in range(self.num_verts))
+
+	def is_a_cycle(self) -> bool:
+		"""Returns True if the graph is a cycle."""
+		if not self.is_connected():
+			return False
+		return self.is_k_regular(2)
