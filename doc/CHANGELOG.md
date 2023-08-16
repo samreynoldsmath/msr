@@ -1,3 +1,12 @@
+## [2023 Aug 15] 0.4.0 Multiprocessing
+- Added an upper bound on MSR by considering cliques and induced covers
+- Added 'entropy minimizing' embedding to `graph/draw.py`
+- Added compatibility with `networkx` graphs via `msr/graph/convert.py`
+- Added `graph/graph_lib/generate.py` to generate all connected graphs on $n$ vertices up to isomorphism
+- Added `msr_batch.py` with functions to compute MSR of multiple graphs at a time with `multiprocessing`
+- Added scripts to `benchmarks/` to generate and test all connected graphs on $n$ vertices up to isomorphism, save images of the troublemakers, and save them to a single .pdf file
+- Removed six-vertex graph files from `graph_lib`, as they can now be generated
+
 ## [2023 Aug 10] 0.3.0 Combinatorial MSR
 - Updated school project to a "usable" package
 - Reworked graph representation (now using sets rather than lists)

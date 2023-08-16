@@ -16,13 +16,16 @@
   - [x] Wheel graphs
   - [ ] Hypercube graphs
   - [x] House graph
-  - [ ] Petersen graph
+  - [x] Petersen graph
 
 ## Algorithms
-- [x] option to use semidefinite programming (`cvxpy`)
+- [x] use semidefinite programming (`cvxpy`) for upper bound
+  - [ ] search over flipping signs of sparsity constraints
 - [ ] edge deletion estimates
+  - [x] edge addition
+  - [ ] edge deletion
 - [ ] proper induced covers (upper bound)
-  - [ ] special case for cut vertices
+  - [x] special case for cut vertices
 - [ ] block-correction decomposition
   - [ ] maximal independent sets
   - [ ] lower bound
@@ -57,5 +60,5 @@
 - [ ] compare `msr_bounds()` to `msr_bounds_sdp()
 
 ## Features
-- [ ] improved visualization (entropy minimization)
+- [x] improved visualization (entropy minimization)
 - [ ] jupyter notebook examples

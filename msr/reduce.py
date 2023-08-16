@@ -32,12 +32,22 @@ def reduce(G: simple_undirected_graph) -> \
 	# main reduction loop: continue until no updates are made
 	while updated:
 
+		# check if time to exit
+		if check_stopping_criteria(G):
+			reduction_report(deletions, d_diff, updated)
+			return G, d_diff, deletions
+
 		# remove pendants
 		# NOTE: this is a cheap operation
 		# NOTE: deleting a pendant reduces dimension by 1
 		G, updated, local_deletions = remove_pendants(G)
 		deletions += local_deletions
 		d_diff += local_deletions
+
+		# check if time to exit
+		if check_stopping_criteria(G):
+			reduction_report(deletions, d_diff, updated)
+			return G, d_diff, deletions
 
 		# remove subdivisions
 		# NOTE: contracting an edge reduces dimension by 1
@@ -46,16 +56,21 @@ def reduce(G: simple_undirected_graph) -> \
 			deletions += local_deletions
 			d_diff += local_deletions
 
+		# check if time to exit
+		if check_stopping_criteria(G):
+			reduction_report(deletions, d_diff, updated)
+			return G, d_diff, deletions
+
 		# remove redundant vertices
 		# NOTE: dimension does not change
 		# NOTE: requires connectivity check
-		# NOTE: premature termination if G becomes disconnected
 		if not updated:
 			G, updated, local_deletions = remove_redundant_verts(G)
 			deletions += local_deletions
-		if not G.is_connected():
-			reduction_report(deletions, d_diff, updated, G.num_verts,
-		      G.is_connected())
+
+		# check if time to exit
+		if check_stopping_criteria(G):
+			reduction_report(deletions, d_diff, updated)
 			return G, d_diff, deletions
 
 		# remove duplicate pairs
@@ -66,26 +81,40 @@ def reduce(G: simple_undirected_graph) -> \
 			deletions += local_deletions
 
 	# report on the reduction and return
-	reduction_report(deletions, d_diff, updated, G.num_verts, G.is_connected())
+	reduction_report(deletions, d_diff, updated)
 	return G, d_diff, deletions
 
-def reduction_report(deletions: int, d_diff: int,
-		     updated: bool, n: int, is_connected: bool) -> None:
-	if not is_connected:
-		logging.debug('reduction halted: graph disconnected')
-	elif not updated:
+def reduction_report(deletions: int, d_diff: int, updated: bool) -> None:
+	if not updated:
 		logging.debug('reduction stagnated')
-	elif n < 3:
-		logging.debug('reduction completed')
-	else:
-		logging.warning('reduction stopped for reasons unknown')
 	v = 'vertices' if deletions != 1 else 'vertex'
 	logging.info(
 		f'reduction removed {deletions} {v}' +
 		f', reduced dimension by {d_diff}'
 	)
 
-def remove_pendants(G: simple_undirected_graph, verbose: bool=False) -> \
+def check_stopping_criteria(G: simple_undirected_graph) -> bool:
+		"""
+		reduction completes if G is
+		* has less than 3 vertices
+		* is disconnected
+		* is complete
+		* is a tree
+		* is a cycle
+		"""
+		stop = not G.is_connected()
+		if stop:
+			logging.debug('reduction stopped because graph is disconnected')
+		if not stop:
+			stop = G.num_verts < 3 or  G.is_complete() or G.is_a_tree()
+			logging.debug('reduction succeeded')
+		if not stop:
+			# more expensive check
+			stop = G.is_a_cycle()
+			logging.debug('reduction succeeded')
+		return stop
+
+def remove_pendants(G: simple_undirected_graph) -> \
 	tuple[simple_undirected_graph, bool, int]:
 	"""
 	Removes all pendant vertices.
@@ -96,17 +125,16 @@ def remove_pendants(G: simple_undirected_graph, verbose: bool=False) -> \
 	i = G.num_verts
 	while i > 0 and G.num_verts > 2:
 		i -= 1
-		# to avoid index errors, apply only one test per iteration
 		if G.vert_is_pendant(i) and G.num_verts > 2:
 			G.remove_vert(i, still_connected=True)
 			updated = True
 			local_deletions += 1
-	if verbose and local_deletions > 0:
-		plural = 's' if local_deletions != 1 else ''
-		logging.debug(f'removed {local_deletions} pendant {plural}')
+	if local_deletions > 0:
+		v = 'pendants' if local_deletions != 1 else 'pendant'
+		logging.debug(f'removed {local_deletions} {v}')
 	return G, updated, local_deletions
 
-def remove_subdivisions(G: simple_undirected_graph, verbose: bool=False) -> \
+def remove_subdivisions(G: simple_undirected_graph) -> \
 	tuple[simple_undirected_graph, bool, int]:
 	"""
 	Removes all subdivisions.
@@ -123,12 +151,12 @@ def remove_subdivisions(G: simple_undirected_graph, verbose: bool=False) -> \
 			G.remove_vert(i, still_connected=True)
 			updated = True
 			local_deletions += 1
-	if verbose and local_deletions > 0:
+	if local_deletions > 0:
 		plural = 's' if local_deletions != 1 else ''
 		logging.debug(f'removed {local_deletions} subdivision {plural}')
 	return G, updated, local_deletions
 
-def remove_redundant_verts(G: simple_undirected_graph, verbose: bool=False) -> \
+def remove_redundant_verts(G: simple_undirected_graph) -> \
 	tuple[simple_undirected_graph, bool, int]:
 	"""
 	Removes all vertices adjacent to every other vertex.
@@ -147,16 +175,15 @@ def remove_redundant_verts(G: simple_undirected_graph, verbose: bool=False) -> \
 			local_deletions += 1
 			# if G has become disconnected, stop reducing
 			if not G.is_connected():
-				if verbose:
-					v = 'vertices' if local_deletions != 1 else 'vertex'
-					logging.debug(f'removed {local_deletions} redundant {v}')
+				v = 'vertices' if local_deletions != 1 else 'vertex'
+				logging.debug(f'removed {local_deletions} redundant {v}')
 				return G, updated, local_deletions
-	if verbose and local_deletions > 0:
+	if local_deletions > 0:
 		v = 'vertices' if local_deletions != 1 else 'vertex'
 		logging.debug(f'removed {local_deletions} redundant {v}')
 	return G, updated, local_deletions
 
-def remove_duplicate_pairs(G: simple_undirected_graph, verbose: bool=False) -> \
+def remove_duplicate_pairs(G: simple_undirected_graph) -> \
 	tuple[simple_undirected_graph, bool, int]:
 	"""
 	Removes all pairs of adjacent vertices with the same neighbors.
@@ -175,7 +202,7 @@ def remove_duplicate_pairs(G: simple_undirected_graph, verbose: bool=False) -> \
 				G.remove_vert(j, still_connected=True)
 				updated = True
 				deletions += 1
-	if verbose and deletions > 0:
+	if deletions > 0:
 		v = 'vertices' if deletions != 1 else 'vertex'
 		logging.debug(f'removed {deletions} duplicate {v}')
 	return G, updated, deletions

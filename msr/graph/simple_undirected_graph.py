@@ -1,3 +1,5 @@
+from numpy import ndarray, zeros
+
 class undirected_edge:
 	"""An undirected edge between two vertices."""
 
@@ -31,6 +33,7 @@ class simple_undirected_graph:
 
 	num_verts: int
 	edges: set[undirected_edge]
+	name: str
 	_is_connected_flag: bool
 
 	def __init__(self, num_verts: int) -> None:
@@ -62,7 +65,7 @@ class simple_undirected_graph:
 		"""Removes the given vertex from the graph."""
 		if self.num_verts < 2:
 			raise ValueError('Cannot remove a vertex from a graph with fewer'
-		    +  'than two vertices.')
+		    	+ ' than two vertices.')
 		if i < 0 or i >= self.num_verts:
 			raise ValueError('Vertex index out of bounds.')
 		# remove edges incident to i
@@ -122,6 +125,37 @@ class simple_undirected_graph:
 		Nj = self.vert_neighbors(j)
 		Nj.remove(i)
 		return Ni == Nj
+
+	def vert_is_cut_vert(self, i: int) -> bool:
+		"""
+		Returns True if the given vertex is a cut vertex.
+		"""
+		if self.num_verts < 3:
+			return False
+		if self.vert_deg(i) < 2:
+			return False
+		G = self.__copy__()
+		G.remove_vert(i)
+		return not G.is_connected()
+
+	def get_a_cut_vert(self) -> int | None:
+		"""
+		Returns the index of a cut vertex in the graph, or None if there are
+		no cut vertices.
+		"""
+		for i in range(self.num_verts):
+			if self.vert_is_cut_vert(i):
+				return i
+		return None
+
+	def get_cut_verts(self) -> set[int]:
+		"""
+		Returns the set of cut vertices in the graph.
+		"""
+		# TODO: Tarjan's algorithm is more efficient
+		return set(
+			[i for i in range(self.num_verts) if self.vert_is_cut_vert(i)]
+			)
 
 	### EDGES #################################################################
 
@@ -198,6 +232,35 @@ class simple_undirected_graph:
 			frontier = new_frontier
 		return reachable
 
+	### INDUCED COVERS ########################################################
+
+	def get_induced_cover_from_cut_vert(self) -> list[object]:
+		"""
+		Returns a list of induced subgraphs, where any two distinct subgraphs
+		intersect at a single vertex (which is necessarily a cut vertex).
+		"""
+		cut_vert_idx = self.get_a_cut_vert()
+		if cut_vert_idx is None:
+			return [self,]
+
+		# construct a proper induced cover
+		H = self.__copy__()
+		H.remove_vert(cut_vert_idx)
+		component_vert_idx = H.connected_components_vert_idx()
+		cover = []
+		for verts in component_vert_idx:
+			num_verts = len(verts)
+			verts_list = list(verts)
+			verts_list.append(cut_vert_idx)
+			H = simple_undirected_graph(num_verts)
+			for i in range(num_verts):
+				for j in range(i + 1, num_verts):
+					if self.is_edge(verts_list[i], verts_list[j]):
+						H.add_edge(i, j)
+			H._is_connected_flag = True
+			cover.append(H)
+		return cover
+
 	### GRAPH TESTS ###########################################################
 
 	def is_connected(self) -> bool:
@@ -231,3 +294,19 @@ class simple_undirected_graph:
 		if not self.is_connected():
 			return False
 		return self.is_k_regular(2)
+
+	### MATRIX REPRESENTATIONS ################################################
+
+	def laplacian(self) -> ndarray:
+		"""
+		Return graph Laplacian
+		"""
+		n = self.num_verts
+		L = zeros((n, n))
+		for e in self.edges:
+			i, j = e.endpoints
+			L[i, j] -= 1
+			L[j, i] -= 1
+			L[i, i] += 1
+			L[j, j] += 1
+		return L

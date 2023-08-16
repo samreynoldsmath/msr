@@ -1,4 +1,9 @@
+.vscode
 .VSCodeCounter
+*.png
+msr/graph/graph_lib/n*/
+msr/graph/graph_lib/six_vert/
+benchmarks/results/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

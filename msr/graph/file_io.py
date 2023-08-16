@@ -1,7 +1,7 @@
 from .simple_undirected_graph import simple_undirected_graph
 import json
 
-def load(filename: str) -> simple_undirected_graph:
+def load_graph(filename: str) -> simple_undirected_graph:
 	with open(filename, 'r') as f:
 		data = json.load(f)
 	G = simple_undirected_graph(data['num_verts'])
@@ -9,12 +9,17 @@ def load(filename: str) -> simple_undirected_graph:
 		G.add_edge(i, j)
 	if 'msr' in data:
 		G.known_msr = data['msr']
+	G.name = filename[:-5]
 	return G
 
-def save(G: simple_undirected_graph, filename: str) -> None:
+def save_graph(G: simple_undirected_graph, filename: str) -> None:
+	edges = []
+	for e in G.edges:
+		i, j = e.endpoints
+		edges.append([i, j])
 	data = {
 		'num_verts': G.num_verts,
-		'edges': [[i ,j] for i, j in G.edges]
+		'edges': edges
 	}
 	custom_json_dump(data, filename)
 

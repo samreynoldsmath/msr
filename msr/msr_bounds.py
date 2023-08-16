@@ -8,7 +8,7 @@ logging.basicConfig(
 	filename='msr_bounds.log',
 	filemode='w',
 	encoding='utf-8',
-	level=logging.DEBUG,
+	level=logging.WARNING,
 	format='%(levelname)s [%(funcName)s %(lineno)s] %(message)s',
 )
 
@@ -42,6 +42,9 @@ def msr_bounds(G: simple_undirected_graph) -> tuple[int, int]:
 	d_lo -= num_isolated_verts
 	d_hi -= num_isolated_verts
 
+	# log output
+	logging.info(f'exited with result {(d_lo, d_hi)}')
+
 	# return bounds on msr(G)
 	return d_lo, d_hi
 
@@ -67,16 +70,16 @@ def dim_bounds(G: simple_undirected_graph, max_depth: int, depth: int=0) -> \
 	"""
 	EMPTY AND COMPLETE GRAPHS
 	-------------------------
-	dim(G) = n for G empty
-	dim(G) = 1 for G complete
+	dim(G) = n if G is empty
+	dim(G) = 1 if G is complete
 	"""
 
 	n = G.num_verts
 	if G.is_empty():
-		logging.info('G is empty')
+		logging.info(f'G is empty on {n} vertices')
 		return n, n
 	if G.is_complete():
-		logging.info('G is complete')
+		logging.info(f'G is complete on {n} vertices')
 		return 1, 1
 
 	"""
@@ -94,6 +97,8 @@ def dim_bounds(G: simple_undirected_graph, max_depth: int, depth: int=0) -> \
 	if not G.is_connected():
 		return d_lo, d_hi
 
+	# NOTE: no need to check if the bounds are equal here
+
 	"""
 	TREES AND CYCLES
 	----------------
@@ -101,16 +106,16 @@ def dim_bounds(G: simple_undirected_graph, max_depth: int, depth: int=0) -> \
 	* G is connected
 	* is not empty
 	* is not complete
-	dim(G) = n - 1 for G a tree
-	dim(G) = n - 2 for G a cycle
+	dim(G) = n - 1 if G is a tree
+	dim(G) = n - 2 if G is a cycle
 	"""
 
 	# special cases of trees and cycles
 	if G.is_a_tree():
-		logging.info('G is a tree')
+		logging.info(f'G is a tree on {n} vertices')
 		return n - 1, n - 1
 	if G.is_a_cycle():
-		logging.info('G is a cycle')
+		logging.info(f'G is a cycle on {n} vertices')
 		return n - 2, n - 2
 
 	"""
@@ -123,6 +128,8 @@ def dim_bounds(G: simple_undirected_graph, max_depth: int, depth: int=0) -> \
 	* redundant vertices (vertices adjacent to all other vertices)
 	The latter is the only reduction that can change the number of components.
 	"""
+
+	# reduce the graph and obtain bounds on the reduced graph
 	G, d_lo, d_hi = reduce_and_bound_reduction(G, max_depth, depth)
 
 	# check if bounds are tight
@@ -130,18 +137,55 @@ def dim_bounds(G: simple_undirected_graph, max_depth: int, depth: int=0) -> \
 		return d_lo, d_hi
 
 	"""
-	INDUCED SUBGRAPH LOWER BOUND
-	----------------------------
+	CUT VERTICES
+	------------
+	A proper induced cover {G_1, ..., G_k} such that G_i and G_j intersect at a
+	cut vertex v of G gives dim(G) = sum(dim(G_i))
+	"""
+
+	# check if G has a cut vertex and obtain bounds
+	d_lo_cover, d_hi_cover = \
+		  bounds_from_cut_vert_induced_cover(G, depth, max_depth)
+
+	# update bounds
+	d_lo = max(d_lo, d_lo_cover)
+	d_hi = min(d_hi, d_hi_cover)
+
+	# check if bounds are tight
+	if check_bounds(d_lo, d_hi, 'checking for cut vertices'):
+		return d_lo, d_hi
+
+	"""
+	INDUCED SUBGRAPHS (LOWER BOUND)
+	-------------------------------
 	Whenever H is an induced subgraph of G, dim(H) <= dim(G).
 	"""
 
 	# check all induced subgraphs to obtain a lower bound
 	d_lo_subgraphs = lower_bound_induced_subgraphs(G, d_hi, max_depth,
 						depth=depth + 1)
+
+	# update lower bound
 	d_lo = max(d_lo, d_lo_subgraphs)
 
 	# check if bounds are tight
 	if check_bounds(d_lo, d_hi, 'checking induced subgraphs'):
+		return d_lo, d_hi
+
+	"""
+	CLIQUES AND PROPER INDUCED COVERS (UPPER BOUND)
+	-----------------------------------------------
+	Obtain a specific proper induced cover by identifying a clique.
+	"""
+
+	# obtain upper bound from cliques
+	d_hi_clique = upper_bound_from_cliques(G, d_lo, depth, max_depth)
+
+	# update upper bound
+	d_hi = min(d_hi, d_hi_clique)
+
+	# check if bounds are tight
+	if check_bounds(d_lo, d_hi, 'checking clique upper bound'):
 		return d_lo, d_hi
 
 	"""
@@ -152,10 +196,7 @@ def dim_bounds(G: simple_undirected_graph, max_depth: int, depth: int=0) -> \
 	"""
 
 	# check if adding an edge can improve the lower bound
-	d_lo_edges, d_hi_edges = bounds_from_edge_addition(G, d_lo, d_hi,
-						    max_depth, depth)
-	d_lo = max(d_lo, d_lo_edges - 1)
-	d_hi = min(d_hi, d_hi_edges + 1)
+	d_lo, d_hi = bounds_from_edge_addition(G, d_lo, d_hi, max_depth, depth)
 
 	# check if bounds are tight
 	if check_bounds(d_lo, d_hi, 'checking edge addition'):
@@ -168,17 +209,23 @@ def dim_bounds(G: simple_undirected_graph, max_depth: int, depth: int=0) -> \
 	removing each one and checking if the dimension bounds are improved.
 	"""
 
-	# TODO: recursion depth maxs out if both edge removal and addition are enabled
+	# TODO: recursion depth maxes out if both edge removal and addition are
+	# both enabled
 
-	logging.info('skipping edge removal')
+	# NOTE: edge removal doesn't seem to be much use anyway, probably because
+	# at this point most graphs will have a sharp lower bound, but removing an
+	# edge typically does not decrease the dimension, so the upper bounds is
+	# unlikely to be improved
 
-	if depth < 0:
+	edge_removal_max_depth = 0
+
+	if depth >= edge_removal_max_depth:
+		logging.info('skipping edge removal')
+
+	if depth < edge_removal_max_depth:
 
 		# check if removing an edge can improve the lower bound
-		d_lo_edges, d_hi_edges = bounds_from_edge_removal(G, d_lo, d_hi,
-						    max_depth, depth)
-		d_lo = max(d_lo, d_lo_edges - 1)
-		d_hi = min(d_hi, d_hi_edges + 1)
+		d_lo, d_hi = bounds_from_edge_removal(G, d_lo, d_hi, max_depth, depth)
 
 		# check if bounds are tight
 		if check_bounds(d_lo, d_hi, 'checking edge removal'):
@@ -187,37 +234,57 @@ def dim_bounds(G: simple_undirected_graph, max_depth: int, depth: int=0) -> \
 	"""
 	SDP UPPER BOUND
 	---------------
-	Use semidefinite progamming to obtain an upper bound. See the documentation
+	Use semidefinite programming to obtain an upper bound. See the documentation
 	in msr/msr_sdp.py for a summary. A derivation of the approach is given in
 	doc/mth610-semidefprog-final-report-reynolds.pdf.
 	"""
+
+	logging.info('computing upper bound via	SDP')
 	d_hi_sdp = msr_sdp_upper_bound(G)
+
+	# report improvement on upper bound
+	if d_hi_sdp < d_hi:
+		logging.debug(f'SDP improved upper bound from {d_hi} to {d_hi_sdp}')
+	else:
+		logging.debug(f'upper bound not improved with SDP')
+
+	# update upper bound
 	d_hi = min(d_hi, d_hi_sdp)
 
 	# check if bounds are tight
 	if check_bounds(d_lo, d_hi, 'checking SDP upper bound'):
 		return d_lo, d_hi
 
-	### INDUCED COVER UPPER BOUND #############################################
-	# TODO: find proper induced covers to obtain an upper bound
-	# NOTE: it seems difficult to do this without a combinatorial explosion
+	"""
+	TODO: INDUCED COVER UPPER BOUND
+	-------------------------
+	Search over proper induced covers to obtain an upper bound.
+	NOTE: this is likely to lead to a combinatorial explosion.
+	"""
 
-	### BRIDGE-CORRECTION DECOMPOSITION #######################################
-	# TODO: apply bridge-correction decomposition to refine bounds
-	# NOTE: also a risk of combinatorial explosion
+	"""
+	TODO: BCD LOWER BOUND
+	---------------
+	Find an independent set and apply bridge-correction decomposition to obtain
+	a lower bound.
+	"""
 
-	# unable to find sharp bounds
-	logging.info('dim_bounds() exited without obtaining sharp bounds')
+	"""
+	EXIT WITHOUT TIGHT BOUNDS
+	-------------------------
+	"""
+	logging.debug('dim_bounds() exited without obtaining tight bounds')
 	return d_lo, d_hi
 
-def check_bounds(d_lo: int, d_hi: int, action_name: str='') -> bool:
+###############################################################################
+
+def check_bounds(d_lo: int, d_hi: int, action_name: str='last action') -> bool:
 	"""
-	Checks that the bounds on the minimum dimension of the given graph are
-	tight.
+	Checks that the bounds on dim(G) are tight.
 	"""
 	bounds_match = d_lo == d_hi
 	if bounds_match:
-		logging.debug('bounds match after ' + action_name)
+		logging.info('bounds match after ' + action_name)
 	if d_lo > d_hi:
 		msg = 'lower bound exceeds upper bound after ' + action_name
 		logging.error(msg)
@@ -227,8 +294,7 @@ def check_bounds(d_lo: int, d_hi: int, action_name: str='') -> bool:
 def get_bounds_on_components(G: simple_undirected_graph, max_depth: int,
 			     depth: int) -> tuple[int, int]:
 	"""
-	Computes bounds on the minimum dimension of each component of the given
-	graph.
+	Computes bounds on dim(G) by summing bounds on components of G.
 	"""
 
 	# find components of G
@@ -254,12 +320,9 @@ def get_bounds_on_components(G: simple_undirected_graph, max_depth: int,
 		return 1, G.num_verts - 1
 
 def reduce_and_bound_reduction(G: simple_undirected_graph, max_depth: int,
-			       depth: int) -> \
-	tuple[simple_undirected_graph, int, int]:
+			       depth: int) -> tuple[simple_undirected_graph, int, int]:
 	"""
-	Reduces the given graph and computes bounds on the reduced graph.
-
-	Returns the reduced graph, the lower bound, and the upper bound.
+	Performs the reduction G |-> H and returns H and bounds on dim(H).
 	"""
 	G, d_diff, deletions = reduce(G)
 
@@ -277,12 +340,41 @@ def reduce_and_bound_reduction(G: simple_undirected_graph, max_depth: int,
 		d_lo, d_hi = dim_bounds(G, max_depth, depth=depth + 1)
 		d_lo += d_diff
 		d_hi += d_diff
-	# in this case, we are dealing with a prereduced connected graph
-	else:
-		d_lo = 1
-		d_hi = G.num_verts - 1
+		return G, d_lo, d_hi
 
+	# otherwise, we are dealing with a connected pre-reduced connected graph
+	# TODO: prove that G connected and dim(G) = n - 1 implies G is a tree
+	d_lo = 2 # G is not complete
+	d_hi = G.num_verts - 2 # G is not a tree and has at least 4 vertices
 	return G, d_lo, d_hi
+
+def bounds_from_cut_vert_induced_cover(G: simple_undirected_graph,
+				  depth: int, max_depth: int) -> tuple[int, int]:
+	"""
+	Checks if G has a cut vertex. If so, generate a proper induced cover
+	{G_1, G_2} such that G_1 and G_2 intersect at exactly one vertex. Then it
+	holds that dim(G) = dim(G_1) + dim(G_2).
+	"""
+
+	# find a cut vertex and associated induced cover of G
+	cover = G.get_induced_cover_from_cut_vert()
+
+	# determine if G has a cut vertex, if so return its index
+	if len(cover) < 2:
+		logging.debug('no cut vertices found')
+		return 0, G.num_verts
+
+	# in the event that a cut vertex is found
+	logging.debug(f'cut vertex found, induced cover with size {len(cover)}')
+
+	# determine dim(G_i) for each G_i in the cover, sum bounds
+	d_lo_cover = 0
+	d_hi_cover = 0
+	for Gi in cover:
+		d_lo_i, d_hi_i = dim_bounds(Gi, max_depth, depth=depth + 1)
+		d_lo_cover += d_lo_i
+		d_hi_cover += d_hi_i
+	return d_lo_cover, d_hi_cover
 
 def lower_bound_induced_subgraphs(G: simple_undirected_graph,
 		  d_hi: int, max_depth: int, depth: int) -> int:
@@ -301,34 +393,31 @@ def lower_bound_induced_subgraphs(G: simple_undirected_graph,
 			return d_lo
 	return d_lo
 
-def bounds_from_edge_removal(G: simple_undirected_graph,
-			     d_lo: int, d_hi: int,
-				 max_depth: int, depth: int) -> tuple[int, int]:
+def upper_bound_from_cliques(G: simple_undirected_graph, d_lo: int,
+			      depth: int, max_depth: int) -> int:
 	"""
-	Computes bounds on the minimum dimension of the given graph by removing
-	edges.
+	Returns an upper bound on dim(G) by locating a vertex i that is part of a
+	clique and obtaining a proper induced cover {K, H}, where K is the clique
+	consisting of i and its neighborhood and H is the induced subgraph G - i.
+	Assumes that G is connected and has already undergone reduction.
 	"""
-	logging.info('checking bounds from edge removal')
-	d_lo_edges = 0
-	d_hi_edges = G.num_verts
-	for e in G.edges:
-		H = G.__copy__()
-		i, j = e.endpoints
-		H.remove_edge(i, j)
-		if H.is_connected():
-			d_lo_H, d_hi_H = dim_bounds(H, max_depth, depth=depth + 1)
-			d_lo_edges = max(d_lo_edges, d_lo_H)
-			d_hi_edges = min(d_hi_edges, d_hi_H)
-			if d_lo_edges >= d_hi and d_lo >= d_hi_edges:
-				return d_lo_edges, d_hi_edges
-	return d_lo_edges, d_hi_edges
+	d_hi_cliques = G.num_verts
+	for i in range(G.num_verts):
+		N = G.vert_neighbors(i)
+		if all(G.is_edge(j, k) for j in N for k in N if j != k):
+			H = G.__copy__()
+			H.remove_vert(i)
+			d_hi_H = dim_bounds(H, max_depth, depth=depth + 1)[1]
+			d_hi_cliques = min(d_hi_cliques, d_hi_H + 1)
+			if d_lo >= d_hi_cliques:
+				return d_hi_cliques
+	return d_hi_cliques
 
 def bounds_from_edge_addition(G: simple_undirected_graph,
 			      d_lo: int, d_hi: int,
 				  max_depth: int, depth: int) -> tuple[int, int]:
 	"""
-	Computes bounds on the minimum dimension of the given graph by adding
-	edges.
+	Computes bounds on dim(G) by adding edges.
 	"""
 	logging.info('checking bounds from edge addition')
 	d_lo_edges = 0
@@ -341,6 +430,32 @@ def bounds_from_edge_addition(G: simple_undirected_graph,
 				d_lo_H, d_hi_H = dim_bounds(H, max_depth, depth=depth + 1)
 				d_lo_edges = max(d_lo_edges, d_lo_H)
 				d_hi_edges = min(d_hi_edges, d_hi_H)
-				if d_lo_edges >= d_hi and d_lo >= d_hi_edges:
-					return d_lo_edges, d_hi_edges
-	return d_lo_edges, d_hi_edges
+				d_lo = max(d_lo, d_lo_edges - 1)
+				d_hi = min(d_hi, d_hi_edges + 1)
+				if d_lo >= d_hi:
+					return d_lo, d_hi
+	return d_lo, d_hi
+
+# likely to become deprecated
+def bounds_from_edge_removal(G: simple_undirected_graph,
+			     d_lo: int, d_hi: int,
+				 max_depth: int, depth: int) -> tuple[int, int]:
+	"""
+	Computes bounds on dim(G) by removing edges.
+	"""
+	logging.info('checking bounds from edge removal')
+	d_lo_edges = 0
+	d_hi_edges = G.num_verts
+	for e in G.edges:
+		H = G.__copy__()
+		i, j = e.endpoints
+		H.remove_edge(i, j)
+		if H.is_connected():
+			d_lo_H, d_hi_H = dim_bounds(H, max_depth, depth=depth + 1)
+			d_lo_edges = max(d_lo_edges, d_lo_H)
+			d_hi_edges = min(d_hi_edges, d_hi_H)
+			d_lo = max(d_lo, d_lo_edges - 1)
+			d_hi = min(d_hi, d_hi_edges + 1)
+			if d_lo >= d_hi:
+				return d_lo, d_hi
+	return d_lo, d_hi
