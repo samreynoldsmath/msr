@@ -27,17 +27,10 @@ actually do any linear algebra.
 	scale well to large graphs.
 
 ## Dependencies
-This project is written in Python 3.10 and uses the following packages:
+This project is written in Python 3.11 and uses the following packages:
 - [cvxpy](https://www.cvxpy.org/) is used to solve semidefinite programs
-- [json](https://docs.python.org/3/library/json.html) is used to save and load
-	graphs
-- [jupyter](https://jupyter.org/) notebooks are used to present examples
-- [logging](https://docs.python.org/3/library/logging.html) is used for
-	logging
 - [matplotlib](https://matplotlib.org/) is used for visualization
-- [multiprocessing](https://docs.python.org/3/library/multiprocessing.html) is used for parallel processing
 - [networkx](https://networkx.org/) is used for graph isomorphism testing
-- [numpy](https://numpy.org/) is used for linear algebra
 - [tqdm](https://tqdm.github.io/) is used for progress bars
 
 ## Author

@@ -1,0 +1,4 @@
+cvxpy
+matplotlib
+networkx
+tqdm
