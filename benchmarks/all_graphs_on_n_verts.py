@@ -51,7 +51,8 @@ def main(n: int):
 			msr.graph.draw_simple_undirected_graph(
 				G = msr.graph.load_graph(graph_file),
 				embedding='min_entropy',
-				filename=image_file
+				filename=image_file,
+				labels=True,
 			)
 
 def num_graphs_on_n_verts(n: int):

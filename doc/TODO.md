@@ -26,11 +26,16 @@
   - [ ] edge deletion
 - [ ] proper induced covers (upper bound)
   - [x] special case for cut vertices
+  - [ ] greedy partition search
 - [ ] block-correction decomposition
-  - [ ] maximal independent sets
-  - [ ] lower bound
-  - [ ] upper bound
+  - [x] maximal independent sets
+  - [ ] maximum independent sets
+  - [x] lower bound
+  - [x] upper bound
   - [ ] avoid combinatorial explosion?
+- [ ] Prove that reduced graph satisfies $2\leq\dim(G)\leq n-2$
+- [ ] Cut-vertex: Tarjan's algorithm
+- [ ] multiprocessing for graph generation
 
 ## Cleanup
 - [x] remove deprecated methods from `simple_undirected_graph`
@@ -57,7 +62,7 @@
 
 ## Benchmarks
 - [x] count number of correct msr predictions with `msr_bounds()`
-- [ ] compare `msr_bounds()` to `msr_bounds_sdp()
+- [ ] compare `msr_bounds()` to `msr_bounds_sdp()`
 
 ## Features
 - [x] improved visualization (entropy minimization)

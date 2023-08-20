@@ -1,5 +1,9 @@
 import logging
+# import networkx as nx
+# from networkx.algorithms import approximation as approx
+from numpy import zeros
 from .graph.simple_undirected_graph import simple_undirected_graph
+# from .graph.convert import convert_native_to_networkx
 from .msr_sdp import msr_sdp_upper_bound
 from .reduce import reduce
 
@@ -189,6 +193,23 @@ def dim_bounds(G: simple_undirected_graph, max_depth: int, depth: int=0) -> \
 		return d_lo, d_hi
 
 	"""
+	BCD LOWER BOUND
+	---------------
+	Find an independent set and apply bridge-correction decomposition to obtain
+	a lower bound. In certain cases, dim(G) can be computed exactly.
+	"""
+
+	d_lo_bcd, d_hi_bcd = bcd_bounds(G, d_hi, max_depth, depth)
+
+	# update bounds
+	d_lo = max(d_lo, d_lo_bcd)
+	d_hi = min(d_hi, d_hi_bcd)
+
+	# check if bounds are tight
+	if check_bounds(d_lo, d_hi, 'checking BCD lower bound'):
+		return d_lo, d_hi
+
+	"""
 	EDGE ADDITION
 	-------------
 	Removing an edge can change the dimension by at most 1. Loop over all
@@ -263,11 +284,21 @@ def dim_bounds(G: simple_undirected_graph, max_depth: int, depth: int=0) -> \
 	"""
 
 	"""
-	TODO: BCD LOWER BOUND
+	BCD UPPER BOUND
 	---------------
-	Find an independent set and apply bridge-correction decomposition to obtain
-	a lower bound.
+	!!! UNSTABLE
+	Find an upper bound by attempting to construct a larger graph and an
+	independent set such that G is the target graph.
 	"""
+
+	d_hi_bcd = bcd_upper_bound(G, d_lo, max_depth, depth)
+
+	# update upper bound
+	d_hi = min(d_hi, d_hi_bcd)
+
+	# check if bounds are tight
+	if check_bounds(d_lo, d_hi, 'checking BCD upper bound'):
+		return d_lo, d_hi
 
 	"""
 	EXIT WITHOUT TIGHT BOUNDS
@@ -436,11 +467,11 @@ def bounds_from_edge_addition(G: simple_undirected_graph,
 					return d_lo, d_hi
 	return d_lo, d_hi
 
-# likely to become deprecated
 def bounds_from_edge_removal(G: simple_undirected_graph,
 			     d_lo: int, d_hi: int,
 				 max_depth: int, depth: int) -> tuple[int, int]:
 	"""
+	! DEPRECATED
 	Computes bounds on dim(G) by removing edges.
 	"""
 	logging.info('checking bounds from edge removal')
@@ -459,3 +490,161 @@ def bounds_from_edge_removal(G: simple_undirected_graph,
 			if d_lo >= d_hi:
 				return d_lo, d_hi
 	return d_lo, d_hi
+
+def bcd_bounds(G: simple_undirected_graph, d_hi: int,
+	  max_depth: int, depth: int) -> int:
+	"""
+	Computes a lower bound on dim(G) by finding an independent set and applying
+	bridge-correction decomposition.
+	"""
+
+	logging.info('computing lower bound via BCD')
+
+	# find an independent set
+	# TODO: check against networkx
+	R = G.maximal_independent_set()
+	m = len(R)
+
+	# compute correction number
+	xi = correction_number_lower_bound(G, R, d_hi, max_depth, depth)
+
+	# compute lower bound
+	d_lo = xi + m
+
+	# if dim(G) - |R| <= 1, then dim(G) = |R| + xi
+	if d_hi - m <= 1:
+		d_hi = d_lo
+
+	return d_lo, d_hi
+
+def correction_number_lower_bound(G: simple_undirected_graph, R: set[int],
+		      d_hi: int, max_depth: int, depth: int) -> int:
+	"""
+	Computes the correction number of G with respect to an independent set R.
+	"""
+
+	# sizes
+	m = len(R)
+	n = G.num_verts
+	b = n - m
+
+	# if G is empty, stop (but this should never happen)
+	if b < 1:
+		logging.debug('G is empty')
+		return 0
+
+	# sort R in descending order to avoid index issues
+	R = list(R)
+	R.sort(reverse=True)
+
+	# target graph
+	H_T = G.__copy__()
+	for i in R:
+		H_T.remove_vert(i)
+
+	# complement of independent set
+	V_minus_R = [i for i in range(n) if i not in R]
+
+	# bridge matrix
+	B = zeros((m, b), dtype=int)
+	for i in range(m):
+		for j in range(b):
+			if G.is_edge(R[i], V_minus_R[j]):
+				B[i, j] = 1
+
+	# bridge generalized adjacency matrix
+	BtB = B.T @ B
+
+	# bridge graphs
+	H_B = simple_undirected_graph(b)
+	H_BO = simple_undirected_graph(b)
+	for i in range(b):
+		for j in range(i + 1, b):
+			if BtB[i, j] == 1:
+				H_B.add_edge(i, j)
+			if BtB[i, j] > 1:
+				H_BO.add_edge(i, j)
+
+	# correction graphs
+	H_C = simple_undirected_graph(b)
+	H_CO = H_BO.__copy__()
+	for i in range(b):
+		for j in range(i + 1, b):
+			if H_T.is_edge(i, j) and H_B.is_edge(i, j):
+				H_CO.add_edge(i, j)
+			elif H_T.is_edge(i, j) != H_B.is_edge(i, j): # XOR
+				H_C.add_edge(i, j)
+
+	# compute number of correction graphs
+	num_opt_edges = H_CO.num_edges()
+
+	# if there are no optional edges, return the correction number
+	if num_opt_edges == 0:
+		logging.debug('no optional edges in correction graph')
+		num_isolated_verts = H_C.num_isolated_verts()
+		d_lo_H_C = dim_bounds(H_C, max_depth, depth=depth + 1)[0]
+		xi = d_lo_H_C - num_isolated_verts
+		return xi
+
+	# enumerate all correction graphs and compute correction number
+	num_correction_graphs = 2 ** num_opt_edges
+	# TODO: check that is not too large?
+	logging.debug(
+		f'computing bounds for {num_correction_graphs} correction graphs')
+	xi = d_hi - m
+	opt_edges = list(H_CO.edges)
+	for k in range(num_correction_graphs):
+		H_Ck = H_C.__copy__()
+		binary = bin(k)[2:].zfill(num_opt_edges)
+		for ij in range(num_opt_edges):
+			if binary[ij] == '1':
+				p, q = opt_edges[ij].endpoints
+				H_Ck.add_edge(p, q)
+		d_lo_k = dim_bounds(H_Ck, max_depth, depth=depth + 1)[0]
+		num_isolated_verts = H_Ck.num_isolated_verts()
+		xi = min(xi, d_lo_k - num_isolated_verts) # yes, this is a min
+		if xi == 0:
+			break
+
+	return xi
+
+def bcd_upper_bound(G: simple_undirected_graph,
+		    d_lo: int, max_depth: int, depth: int) -> int:
+	"""
+	Obtains an upper bound on dim(G) by treating it as a target graph of a
+	larger graph. The independent set is taken to be a singleton whose
+	neighborhood forms a clique in the target graph.
+	"""
+	logging.info('computing upper bound via BCD')
+	n = G.num_verts
+
+	# TODO: this fails for n too large... why?
+	if n > 6:
+		return n
+
+	d_hi_bcd = n
+	for i in range(G.num_verts):
+		N = G.vert_neighbors(i)
+
+		# clique discovery
+		# TODO: this is suboptimal
+		clique = set([i,])
+		for j in N:
+			if all([G.is_edge(j, k) for k in clique]):
+				clique.add(j)
+
+		# apply BCD
+		if len(clique) > 2:
+			H = G.__copy__()
+			H.set_num_verts(n + 1)
+			for p in clique:
+				H.add_edge(p, n)
+				for q in clique:
+					if p != q:
+						H.remove_edge(p, q)
+			d_hi_H = dim_bounds(H, max_depth, depth + 1)[1]
+			d_hi_bcd = min(d_hi_bcd, d_hi_H - 1)
+			if d_hi_bcd <= d_lo:
+				return d_hi_bcd
+
+	return d_hi_bcd

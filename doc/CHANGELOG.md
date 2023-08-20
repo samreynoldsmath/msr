@@ -1,3 +1,8 @@
+## [2023 Aug 17] 0.5.0 BCD
+- Added maximal independent set algorithm to `simple_undirected_graph`
+- Added lower and upper bounds on MSR via BCD
+  - n7 benchmark takes ~10 minutes vs ~2.5 hours without BCD
+
 ## [2023 Aug 15] 0.4.0 Multiprocessing
 - Added an upper bound on MSR by considering cliques and induced covers
 - Added 'entropy minimizing' embedding to `graph/draw.py`
