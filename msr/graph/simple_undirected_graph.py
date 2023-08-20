@@ -95,6 +95,18 @@ class simple_undirected_graph:
 		"""Returns the number of isolated vertices in the graph."""
 		return len([i for i in range(self.num_verts) if self.vert_deg(i) == 0])
 
+	def clique_containing_vert(self, i: int) -> bool:
+		"""Returns a maximal clique containing the vertex i."""
+		raise NotImplementedError()
+		# N = self.vert_neighbors(i)
+		# for j in N:
+		# 	for k in N:
+		# 		if j != k:
+		# 			print(j, k, self.is_edge(j, k))
+		# 			if not self.is_edge(j, k):
+		# 				return False
+		# return True
+
 	### VERTEX TESTS ##########################################################
 
 	def vert_is_pendant(self, i: int) -> bool:
@@ -115,9 +127,7 @@ class simple_undirected_graph:
 		return self.vert_deg(i) == self.num_verts - 1
 
 	def verts_are_duplicate_pair(self, i: int, j: int) -> bool:
-		"""
-		Returns True if i,j are adjacent and have the same neighbors.
-		"""
+		"""Returns True if i,j are adjacent and have the same neighbors."""
 		if not self.is_edge(i, j):
 			return False
 		Ni = self.vert_neighbors(i)
@@ -127,9 +137,7 @@ class simple_undirected_graph:
 		return Ni == Nj
 
 	def vert_is_cut_vert(self, i: int) -> bool:
-		"""
-		Returns True if the given vertex is a cut vertex.
-		"""
+		"""Returns True if the given vertex is a cut vertex."""
 		if self.num_verts < 3:
 			return False
 		if self.vert_deg(i) < 2:
@@ -149,13 +157,38 @@ class simple_undirected_graph:
 		return None
 
 	def get_cut_verts(self) -> set[int]:
-		"""
-		Returns the set of cut vertices in the graph.
-		"""
+		"""Returns the set of cut vertices in the graph."""
 		# TODO: Tarjan's algorithm is more efficient
 		return set(
 			[i for i in range(self.num_verts) if self.vert_is_cut_vert(i)]
 			)
+
+	def maximal_independent_set(self) -> set[int]:
+		"""
+		DEPRECATED: networkx has a better implementation of this function.
+
+		Returns a maximal independent set of vertices in the graph, using a
+		greedy algorithm based on vertex degree.
+		"""
+
+		indep_set = set()
+		candidates = set(range(self.num_verts))
+
+		while len(candidates) > 0:
+
+			# pick a candidate vertex of minimum degree
+			i = min(candidates, key=self.vert_deg)
+
+			# add i to the independent set
+			indep_set.add(i)
+
+			# remove i and its neighbors from the set of candidates
+			candidates.remove(i)
+			N = self.vert_neighbors(i)
+			for j in N:
+				candidates.discard(j)
+
+		return indep_set
 
 	### EDGES #################################################################
 
@@ -169,7 +202,7 @@ class simple_undirected_graph:
 		self._is_connected_flag = None
 
 	def remove_edge(self, i: int, j: int) -> None:
-		self.edges.remove(undirected_edge(i, j))
+		self.edges.discard(undirected_edge(i, j))
 		self._is_connected_flag = None
 
 	def is_edge(self, i: int, j: int) -> bool:
@@ -298,9 +331,7 @@ class simple_undirected_graph:
 	### MATRIX REPRESENTATIONS ################################################
 
 	def laplacian(self) -> ndarray:
-		"""
-		Return graph Laplacian
-		"""
+		"""Returns the graph Laplacian matrix."""
 		n = self.num_verts
 		L = zeros((n, n))
 		for e in self.edges:
