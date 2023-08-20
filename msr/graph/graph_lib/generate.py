@@ -1,62 +1,112 @@
-import networkx as nx
+from itertools import permutations
+from math import ceil, log10, factorial
+from multiprocessing import Pool
 import os
 import tqdm
-from ..simple_undirected_graph import simple_undirected_graph
 from ..file_io import save_graph
-from ..convert import convert_native_to_networkx, convert_networkx_to_native
+from ..simple_undirected_graph import simple_undirected_graph
 
-# TODO: use multiprocessing?
 
-def generate_all_graphs_on_n_vertices(n: int, path: str) -> \
-	  list[simple_undirected_graph]:
+def generate_and_save_all_graphs_on_n_vertices(n: int, path: str) -> None:
+	"""Generates and saves all graphs on n vertices"""
+	nx_graphs = generate_all_graphs_on_n_vertices(n)
+	save_graphs(nx_graphs, path)
+
+def generate_all_graphs_on_n_vertices(n: int) -> set[simple_undirected_graph]:
 	"""
-	Generates all graphs on n vertices
-	:param n: number of vertices
-	:return: list of graphs
+	Generates all graphs on n vertices by constructing all graphs isomorphic to
+	G and testing if any of these graphs have been seen.
+
+	Idea from https://stackoverflow.com/questions/71597789/generate-all-digraphs-of-a-given-size-up-to-isomorphism
 	"""
-	nx_graphs: list[nx.Graph] = []
+
+	found_hashes: set[int] = set()
+	seen_hashes: set[int] = set()
 	n_choose_2 = n * (n - 1) // 2
-
-	print(f'Generating all graphs on {n} vertices...')
 
 	# hash each graph as an integer k, such that k written in binary represents
 	# the edges of the graph, with zero being a non-edge, and one being an edge.
 	for k in tqdm.tqdm(range(2 ** n_choose_2)):
+		if k in seen_hashes:
+			continue
+		G = construct_graph_from_hash(k, n, n_choose_2)
+		if G.num_edges() < n - 1:
+			continue
+		if not G.is_connected():
+			continue
+		is_not_new, seen = is_not_new_graph(G, found_hashes)
+		seen_hashes.update(seen)
+		if not is_not_new:
+			found_hashes.add(hash(G))
 
-		# convert k to binary, and pad with zeros to the left
-		binary = bin(k)[2:].zfill(n_choose_2)
+	# report number of graphs
+	num_graphs = len(found_hashes)
+	print(f'Number of connected graphs on {n} vertices: {num_graphs}')
 
-		# convert binary to a list of edges in a graph G
-		G = simple_undirected_graph(num_verts=n)
-		for i in range(n - 1):
-			for j in range(i + 1, n):
-				ij = j - 1 + (i * (2 * n - 3 - i)) // 2
-				if binary[ij] == '1':
-					G.add_edge(i, j)
+	# reconstruct graphs from hashes
+	graphs = set()
+	for k in found_hashes:
+		G = construct_graph_from_hash(k, n, n_choose_2)
+		graphs.add(G)
 
-		# determine if G is connected
-		if G.is_connected():
+	return graphs
 
-			G_nx = convert_native_to_networkx(G)
+def is_not_new_graph(G: simple_undirected_graph, found_hashes: set[int]) \
+		-> tuple[bool, list[int]]:
+	"""Determines if a graph G is isomorphic to a graph in found_hashes."""
+	seen = set()
+	perms = permutations(range(G.num_verts))
+	num_perms = factorial(G.num_verts)
+	with Pool() as pool:
+		res = pool.starmap(
+			is_not_new_graph_worker,
+			[(G, perm, found_hashes) for perm in perms],
+			chunksize=max(10, num_perms // 128)
+		)
+	is_not_new = any([H_is_not_new for _, H_is_not_new in res])
+	seen = set([k for k, _ in res])
+	return is_not_new, seen
 
-			# test if G is isomorphic to a graph already in the list
-			isomorphic = False
-			for H_nx in nx_graphs:
-				if nx.is_isomorphic(G_nx, H_nx):
-					isomorphic = True
-					break
-			if not isomorphic:
-				# TODO: relative path
-				G_nx.filename = f'{path}/k{k}.json'
-				nx_graphs.append(G_nx)
+def is_not_new_graph_worker(G: simple_undirected_graph, perm: list[int],
+	       found_hashes: set[int]) -> tuple[int, bool]:
+	"""
+	Permute the vertices of G and check if the resulting graph is in
+	found_hashes.
+	"""
+	H = G.permute_verts(perm)
+	return hash(H), hash(H) in found_hashes
+
+def construct_graph_from_hash(k: int, n: int, n_choose_2: int) \
+	  -> simple_undirected_graph:
+	"""Constructs a graph on n vertices from an edge hash k."""
+
+	# convert k to binary, and pad with zeros to the left
+	binary = bin(k)[2:].zfill(n_choose_2)
+
+	# convert binary to a list of edges in a graph G
+	G = simple_undirected_graph(num_verts=n)
+	for i in range(n - 1):
+		for j in range(i + 1, n):
+			ij = j - 1 + (i * (2 * n - 3 - i)) // 2
+			if binary[ij] == '1':
+				G.add_edge(i, j)
+
+	return G
+
+def save_graphs(graphs: set[simple_undirected_graph], path: str) -> None:
+	"""Saves graphs to disk."""
 
 	# create directory if none exists
 	if not os.path.exists(path):
 		os.makedirs(path)
 
-	# save all graphs
-	print(f'Number of graphs on {n} vertices: {len(nx_graphs)}')
-	for G_nx in tqdm.tqdm(nx_graphs):
-		filename = G_nx.filename
-		G = convert_networkx_to_native(G_nx)
+	# save graphs
+	print(f'Saving graphs to {path}')
+	for G in tqdm.tqdm(graphs):
+		k = hash(G)
+		n = G.num_verts
+		n_choose_2 = n * (n - 1) // 2
+		num_digits = ceil(log10(n_choose_2))
+		k_str = str(k).zfill(num_digits)
+		filename = f'{path}/k{k_str}.json'
 		save_graph(G, filename)

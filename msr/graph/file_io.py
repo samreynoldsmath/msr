@@ -1,5 +1,6 @@
-from .simple_undirected_graph import simple_undirected_graph
 import json
+import os
+from .simple_undirected_graph import simple_undirected_graph
 
 def load_graph(filename: str) -> simple_undirected_graph:
 	with open(filename, 'r') as f:
@@ -11,6 +12,15 @@ def load_graph(filename: str) -> simple_undirected_graph:
 		G.known_msr = data['msr']
 	G.name = filename[:-5]
 	return G
+
+def load_graphs_from_directory(path: str) -> list[simple_undirected_graph]:
+	graphs = []
+	directory = os.fsencode(path)
+	for file in os.listdir(directory):
+		filename = os.fsdecode(file)
+		if filename.endswith(".json"):
+			graphs.append(load_graph(path + "/" + filename))
+	return graphs
 
 def save_graph(G: simple_undirected_graph, filename: str) -> None:
 	edges = []

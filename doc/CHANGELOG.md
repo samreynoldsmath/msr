@@ -1,3 +1,10 @@
+## [2023 Aug 19] 0.5.1 Generation Optimizations
+- [ ] Restructured `graph_lib/generate.py` to use `simple_undirected_graph` class
+- [ ] Added hash method to `simple_undirected_graph` class
+- [ ] Rather than checking for isomorphism against all graphs in the list, generate all elements of isomorphism class and check against those
+  - [ ] `multiprocessing` is used to permute the edges and compute the new hash
+- [ ] Changed examples to Jupyter notebooks
+
 ## [2023 Aug 17] 0.5.0 BCD
 - Added maximal independent set algorithm to `simple_undirected_graph`
 - Added lower and upper bounds on MSR via BCD

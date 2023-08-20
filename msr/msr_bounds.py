@@ -1,9 +1,6 @@
 import logging
-# import networkx as nx
-# from networkx.algorithms import approximation as approx
 from numpy import zeros
 from .graph.simple_undirected_graph import simple_undirected_graph
-# from .graph.convert import convert_native_to_networkx
 from .msr_sdp import msr_sdp_upper_bound
 from .reduce import reduce
 

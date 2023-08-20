@@ -54,6 +54,17 @@ class simple_undirected_graph:
 		G.edges = self.edges.copy()
 		return G
 
+	def __hash__(self):
+		n = self.num_verts
+		n_choose_2 = n * (n - 1) // 2
+		binary = '0' * n_choose_2
+		for i in range(n- 1):
+			for j in range(i + 1, n):
+				if self.is_edge(i, j):
+					ij = j - 1 + (i * (2 * n - 3 - i)) // 2
+					binary = binary[:ij] + '1' + binary[ij + 1:]
+		return int(binary, 2)
+
 	### VERTICES ##############################################################
 
 	def set_num_verts(self, num_verts: int) -> None:
@@ -106,6 +117,19 @@ class simple_undirected_graph:
 		# 			if not self.is_edge(j, k):
 		# 				return False
 		# return True
+
+	def permute_verts(self, perm: list[int]) -> None:
+		""""
+		Returns a graph with vertices permuted according to the given list.
+		"""
+		if not set(perm) == set(range(self.num_verts)):
+			raise ValueError('Permutation list must be a permutation of the'
+				+ ' vertices.')
+		H = simple_undirected_graph(self.num_verts)
+		for e in self.edges:
+			i, j = e.endpoints
+			H.add_edge(perm[i], perm[j])
+		return H
 
 	### VERTEX TESTS ##########################################################
 

@@ -62,8 +62,7 @@
 
 ## Benchmarks
 - [x] count number of correct msr predictions with `msr_bounds()`
-- [ ] compare `msr_bounds()` to `msr_bounds_sdp()`
 
 ## Features
 - [x] improved visualization (entropy minimization)
-- [ ] jupyter notebook examples
+- [x] jupyter notebook examples

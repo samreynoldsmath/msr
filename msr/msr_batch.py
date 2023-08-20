@@ -1,8 +1,7 @@
 import multiprocessing
-import os
 import tqdm
 from .graph.simple_undirected_graph import simple_undirected_graph
-from .graph.file_io import load_graph
+from .graph.file_io import load_graphs_from_directory
 from .msr_bounds import msr_bounds
 
 def msr_batch_from_directory(path: str) -> list[tuple[int, int, str]]:
@@ -19,12 +18,7 @@ def msr_batch_from_directory(path: str) -> list[tuple[int, int, str]]:
 	list[tuple[int, int, str]]
 		For each graph, the MSR bounds and the name/id of the graph.
 	"""
-	graphs = []
-	directory = os.fsencode(path)
-	for file in os.listdir(directory):
-		filename = os.fsdecode(file)
-		if filename.endswith(".json"):
-			graphs.append(load_graph(path + "/" + filename))
+	graphs = load_graphs_from_directory(path)
 	return msr_batch(graphs)
 
 def msr_batch(graphs: list[simple_undirected_graph]) -> \
