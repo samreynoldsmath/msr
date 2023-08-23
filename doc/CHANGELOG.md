@@ -1,3 +1,8 @@
+## [2023 Aug 22] 0.5.2 PEP8
+- [ ] Converted all files to PEP8 style using `black` and `isort`
+- [ ] Minor optimization of graph generator to use less memory
+  - [ ] Generating n=8 graphs takes ~4 hours
+
 ## [2023 Aug 19] 0.5.1 Generation Optimizations
 - [ ] Restructured `graph_lib/generate.py` to use `simple_undirected_graph` class
 - [ ] Added hash method to `simple_undirected_graph` class
