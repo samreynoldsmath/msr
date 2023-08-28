@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Optional
+
 from numpy import ndarray, zeros
 
 
@@ -30,19 +34,21 @@ class undirected_edge:
         self.endpoints = {i, j}
 
 
-class simple_undirected_graph:
-    """An simple undirected graph."""
+class graph:
+    """A simple undirected graph."""
 
     num_verts: int
     edges: set[undirected_edge]
     name: str
-    _is_connected_flag: bool
+    known_msr: Optional[int]
+    _is_connected_flag: Optional[bool]
 
     def __init__(self, num_verts: int) -> None:
         self.set_num_verts(num_verts)
         self.edges = set()
-        self._is_connected_flag = None
         self.name = f"graph on {num_verts} vertices"
+        self._is_connected_flag = None
+        self.known_msr = None
 
     def __str__(self) -> str:
         s = f"Vertex count: {self.num_verts}"
@@ -53,7 +59,7 @@ class simple_undirected_graph:
         return s
 
     def __copy__(self):
-        G = simple_undirected_graph(self.num_verts)
+        G = graph(self.num_verts)
         G.edges = self.edges.copy()
         return G
 
@@ -75,11 +81,14 @@ class simple_undirected_graph:
             raise ValueError("Must have a positive number of vertices")
         self.num_verts = num_verts
 
-    def remove_vert(self, i: int, still_connected: bool = None) -> None:
+    def remove_vert(
+        self, i: int, still_connected: Optional[bool] = None
+    ) -> None:
         """Removes the given vertex from the graph."""
         if self.num_verts < 2:
             raise ValueError(
-                "Cannot remove a vertex from a graph with fewer" + " than two vertices."
+                "Cannot remove a vertex from a graph with fewer"
+                + " than two vertices."
             )
         if i < 0 or i >= self.num_verts:
             raise ValueError("Vertex index out of bounds.")
@@ -122,7 +131,7 @@ class simple_undirected_graph:
         # 				return False
         # return True
 
-    def permute_verts(self, perm: list[int]) -> None:
+    def permute_verts(self, perm: list[int]) -> graph:
         """ "
         Returns a graph with vertices permuted according to the given list.
         """
@@ -130,7 +139,7 @@ class simple_undirected_graph:
             raise ValueError(
                 "Permutation list must be a permutation of the" + " vertices."
             )
-        H = simple_undirected_graph(self.num_verts)
+        H = graph(self.num_verts)
         for e in self.edges:
             i, j = e.endpoints
             H.add_edge(perm[i], perm[j])
@@ -188,7 +197,9 @@ class simple_undirected_graph:
     def get_cut_verts(self) -> set[int]:
         """Returns the set of cut vertices in the graph."""
         # TODO: Tarjan's algorithm is more efficient
-        return set([i for i in range(self.num_verts) if self.vert_is_cut_vert(i)])
+        return set(
+            [i for i in range(self.num_verts) if self.vert_is_cut_vert(i)]
+        )
 
     def maximal_independent_set(self) -> set[int]:
         """
@@ -238,9 +249,9 @@ class simple_undirected_graph:
 
     ### COMPONENTS ############################################################
 
-    def connected_components(self) -> list[object]:
+    def connected_components(self) -> list[graph]:
         """
-        Returns a list of simple_undirected_graph objects, where each object is
+        Returns a list of graph objects, where each object is
         a connected component of the graph.
         """
         component_vert_idx = self.connected_components_vert_idx()
@@ -248,7 +259,7 @@ class simple_undirected_graph:
         for verts in component_vert_idx:
             num_verts = len(verts)
             verts_list = list(verts)
-            H = simple_undirected_graph(num_verts)
+            H = graph(num_verts)
             for i in range(num_verts):
                 for j in range(i + 1, num_verts):
                     if self.is_edge(verts_list[i], verts_list[j]):
@@ -263,7 +274,7 @@ class simple_undirected_graph:
         indices is a connected component of the graph.
         """
         component_index_list = []
-        visited = set()
+        visited: set[int] = set()
         for i in range(self.num_verts):
             if not (i in visited):
                 this_component_idx_set = self.bfs(i)
@@ -301,7 +312,7 @@ class simple_undirected_graph:
 
     ### INDUCED COVERS ########################################################
 
-    def get_induced_cover_from_cut_vert(self) -> list[object]:
+    def get_induced_cover_from_cut_vert(self) -> list[graph]:
         """
         Returns a list of induced subgraphs, where any two distinct subgraphs
         intersect at a single vertex (which is necessarily a cut vertex).
@@ -321,7 +332,7 @@ class simple_undirected_graph:
             num_verts = len(verts)
             verts_list = list(verts)
             verts_list.append(cut_vert_idx)
-            H = simple_undirected_graph(num_verts)
+            H = graph(num_verts)
             for i in range(num_verts):
                 for j in range(i + 1, num_verts):
                     if self.is_edge(verts_list[i], verts_list[j]):
@@ -338,7 +349,9 @@ class simple_undirected_graph:
             return True
         if self._is_connected_flag is None:
             self.connected_components_vert_idx()
-        return self._is_connected_flag
+        if self._is_connected_flag is None:
+            raise RuntimeError("Could not determine connectedness of graph.")
+        return bool(self._is_connected_flag)
 
     def is_empty(self) -> bool:
         """Returns True if the graph has no edges."""

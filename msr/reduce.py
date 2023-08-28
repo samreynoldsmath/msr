@@ -1,9 +1,9 @@
 import logging
 
-from .graph.simple_undirected_graph import simple_undirected_graph
+from .graph.graph import graph
 
 
-def reduce(G: simple_undirected_graph) -> tuple[simple_undirected_graph, int, int]:
+def reduce(G: graph) -> tuple[graph, int, int]:
     """
     Attempts to reduce the number of vertices in the graph by
     * removing pendants
@@ -90,11 +90,12 @@ def reduction_report(deletions: int, d_diff: int, updated: bool) -> None:
         logging.debug("reduction stagnated")
     v = "vertices" if deletions != 1 else "vertex"
     logging.info(
-        f"reduction removed {deletions} {v}" + f", reduced dimension by {d_diff}"
+        f"reduction removed {deletions} {v}"
+        + f", reduced dimension by {d_diff}"
     )
 
 
-def check_stopping_criteria(G: simple_undirected_graph) -> bool:
+def check_stopping_criteria(G: graph) -> bool:
     """
     reduction completes if G is
     * has less than 3 vertices
@@ -117,8 +118,8 @@ def check_stopping_criteria(G: simple_undirected_graph) -> bool:
 
 
 def remove_pendants(
-    G: simple_undirected_graph,
-) -> tuple[simple_undirected_graph, bool, int]:
+    G: graph,
+) -> tuple[graph, bool, int]:
     """
     Removes all pendant vertices.
     """
@@ -139,8 +140,8 @@ def remove_pendants(
 
 
 def remove_subdivisions(
-    G: simple_undirected_graph,
-) -> tuple[simple_undirected_graph, bool, int]:
+    G: graph,
+) -> tuple[graph, bool, int]:
     """
     Removes all subdivisions.
     """
@@ -163,8 +164,8 @@ def remove_subdivisions(
 
 
 def remove_redundant_verts(
-    G: simple_undirected_graph,
-) -> tuple[simple_undirected_graph, bool, int]:
+    G: graph,
+) -> tuple[graph, bool, int]:
     """
     Removes all vertices adjacent to every other vertex.
 
@@ -192,8 +193,8 @@ def remove_redundant_verts(
 
 
 def remove_duplicate_pairs(
-    G: simple_undirected_graph,
-) -> tuple[simple_undirected_graph, bool, int]:
+    G: graph,
+) -> tuple[graph, bool, int]:
     """
     Removes all pairs of adjacent vertices with the same neighbors.
     """

@@ -3,7 +3,7 @@ import multiprocessing
 import tqdm
 
 from .graph.file_io import load_graphs_from_directory
-from .graph.simple_undirected_graph import simple_undirected_graph
+from .graph.graph import graph
 from .msr_bounds import msr_bounds
 
 
@@ -25,13 +25,13 @@ def msr_batch_from_directory(path: str) -> list[tuple[int, int, str]]:
     return msr_batch(graphs)
 
 
-def msr_batch(graphs: list[simple_undirected_graph]) -> list[tuple[int, int, str]]:
+def msr_batch(graphs: list[graph]) -> list[tuple[int, int, str]]:
     """
     Computes the MSR bounds for a batch of graphs with multiprocessing.
 
     Parameters
     ----------
-    graphs : list[simple_undirected_graph]
+    graphs : list[graph]
             The graphs to compute the MSR bounds for.
 
     Returns
@@ -42,11 +42,12 @@ def msr_batch(graphs: list[simple_undirected_graph]) -> list[tuple[int, int, str
     with multiprocessing.Pool() as pool:
         return list(
             tqdm.tqdm(
-                pool.imap_unordered(_msr_bounds_with_id, graphs), total=len(graphs)
+                pool.imap_unordered(_msr_bounds_with_id, graphs),
+                total=len(graphs),
             )
         )
 
 
-def _msr_bounds_with_id(graph: simple_undirected_graph) -> tuple[int, int, str]:
+def _msr_bounds_with_id(graph: graph) -> tuple[int, int, str]:
     d_lo, d_hi = msr_bounds(graph)
     return d_lo, d_hi, graph.name

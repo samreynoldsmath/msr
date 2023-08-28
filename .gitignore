@@ -1,9 +1,7 @@
 .vscode
 .VSCodeCounter
-*.png
-msr/graph/graph_lib/n*/
-msr/graph/graph_lib/six_vert/
-benchmarks/results/
+benchmarks/figs/
+msr/graph/saved/
 
 bin/
 lib/

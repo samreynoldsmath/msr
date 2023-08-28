@@ -2,7 +2,7 @@ import logging
 
 from numpy import zeros
 
-from .graph.simple_undirected_graph import simple_undirected_graph
+from .graph import graph
 from .msr_sdp import msr_sdp_upper_bound
 from .reduce import reduce
 
@@ -16,7 +16,7 @@ logging.basicConfig(
 )
 
 
-def msr_bounds(G: simple_undirected_graph) -> tuple[int, int]:
+def msr_bounds(G: graph) -> tuple[int, int]:
     """
     Returns bounds on msr(G) using a recursive algorithm.
     """
@@ -53,9 +53,7 @@ def msr_bounds(G: simple_undirected_graph) -> tuple[int, int]:
     return d_lo, d_hi
 
 
-def dim_bounds(
-    G: simple_undirected_graph, max_depth: int, depth: int = 0
-) -> tuple[int, int]:
+def dim_bounds(G: graph, max_depth: int, depth: int = 0) -> tuple[int, int]:
     """
     Returns bounds dim(G), where G is a simple undirected graph, and
     dim(G) = msr(G) + the number of isolated vertices. Equivalently, dim(G) is
@@ -150,7 +148,9 @@ def dim_bounds(
 	"""
 
     # check if G has a cut vertex and obtain bounds
-    d_lo_cover, d_hi_cover = bounds_from_cut_vert_induced_cover(G, depth, max_depth)
+    d_lo_cover, d_hi_cover = bounds_from_cut_vert_induced_cover(
+        G, depth, max_depth
+    )
 
     # update bounds
     d_lo = max(d_lo, d_lo_cover)
@@ -167,7 +167,9 @@ def dim_bounds(
 	"""
 
     # check all induced subgraphs to obtain a lower bound
-    d_lo_subgraphs = lower_bound_induced_subgraphs(G, d_hi, max_depth, depth=depth + 1)
+    d_lo_subgraphs = lower_bound_induced_subgraphs(
+        G, d_hi, max_depth, depth=depth + 1
+    )
 
     # update lower bound
     d_lo = max(d_lo, d_lo_subgraphs)
@@ -310,7 +312,9 @@ def dim_bounds(
 ###############################################################################
 
 
-def check_bounds(d_lo: int, d_hi: int, action_name: str = "last action") -> bool:
+def check_bounds(
+    d_lo: int, d_hi: int, action_name: str = "last action"
+) -> bool:
     """
     Checks that the bounds on dim(G) are tight.
     """
@@ -325,7 +329,7 @@ def check_bounds(d_lo: int, d_hi: int, action_name: str = "last action") -> bool
 
 
 def get_bounds_on_components(
-    G: simple_undirected_graph, max_depth: int, depth: int
+    G: graph, max_depth: int, depth: int
 ) -> tuple[int, int]:
     """
     Computes bounds on dim(G) by summing bounds on components of G.
@@ -355,8 +359,8 @@ def get_bounds_on_components(
 
 
 def reduce_and_bound_reduction(
-    G: simple_undirected_graph, max_depth: int, depth: int
-) -> tuple[simple_undirected_graph, int, int]:
+    G: graph, max_depth: int, depth: int
+) -> tuple[graph, int, int]:
     """
     Performs the reduction G |-> H and returns H and bounds on dim(H).
     """
@@ -386,7 +390,7 @@ def reduce_and_bound_reduction(
 
 
 def bounds_from_cut_vert_induced_cover(
-    G: simple_undirected_graph, depth: int, max_depth: int
+    G: graph, depth: int, max_depth: int
 ) -> tuple[int, int]:
     """
     Checks if G has a cut vertex. If so, generate a proper induced cover
@@ -416,7 +420,7 @@ def bounds_from_cut_vert_induced_cover(
 
 
 def lower_bound_induced_subgraphs(
-    G: simple_undirected_graph, d_hi: int, max_depth: int, depth: int
+    G: graph, d_hi: int, max_depth: int, depth: int
 ) -> int:
     """
     Returns the maximum lower bound of the dimension of any induced subgraph.
@@ -435,7 +439,7 @@ def lower_bound_induced_subgraphs(
 
 
 def upper_bound_from_cliques(
-    G: simple_undirected_graph, d_lo: int, depth: int, max_depth: int
+    G: graph, d_lo: int, depth: int, max_depth: int
 ) -> int:
     """
     Returns an upper bound on dim(G) by locating a vertex i that is part of a
@@ -457,7 +461,7 @@ def upper_bound_from_cliques(
 
 
 def bounds_from_edge_addition(
-    G: simple_undirected_graph, d_lo: int, d_hi: int, max_depth: int, depth: int
+    G: graph, d_lo: int, d_hi: int, max_depth: int, depth: int
 ) -> tuple[int, int]:
     """
     Computes bounds on dim(G) by adding edges.
@@ -481,7 +485,7 @@ def bounds_from_edge_addition(
 
 
 def bounds_from_edge_removal(
-    G: simple_undirected_graph, d_lo: int, d_hi: int, max_depth: int, depth: int
+    G: graph, d_lo: int, d_hi: int, max_depth: int, depth: int
 ) -> tuple[int, int]:
     """
     ! DEPRECATED
@@ -506,8 +510,8 @@ def bounds_from_edge_removal(
 
 
 def bcd_bounds(
-    G: simple_undirected_graph, d_hi: int, max_depth: int, depth: int
-) -> int:
+    G: graph, d_hi: int, max_depth: int, depth: int
+) -> tuple[int, int]:
     """
     Computes a lower bound on dim(G) by finding an independent set and applying
     bridge-correction decomposition.
@@ -534,7 +538,7 @@ def bcd_bounds(
 
 
 def correction_number_lower_bound(
-    G: simple_undirected_graph, R: set[int], d_hi: int, max_depth: int, depth: int
+    G: graph, R: set[int], d_hi: int, max_depth: int, depth: int
 ) -> int:
     """
     Computes the correction number of G with respect to an independent set R.
@@ -551,30 +555,30 @@ def correction_number_lower_bound(
         return 0
 
     # sort R in descending order to avoid index issues
-    R = list(R)
-    R.sort(reverse=True)
+    R_list: list[int] = list(R)
+    R_list.sort(reverse=True)
 
     # target graph
     H_T = G.__copy__()
-    for i in R:
+    for i in R_list:
         H_T.remove_vert(i)
 
     # complement of independent set
-    V_minus_R = [i for i in range(n) if i not in R]
+    V_minus_R = [i for i in range(n) if i not in R_list]
 
     # bridge matrix
     B = zeros((m, b), dtype=int)
     for i in range(m):
         for j in range(b):
-            if G.is_edge(R[i], V_minus_R[j]):
+            if G.is_edge(R_list[i], V_minus_R[j]):
                 B[i, j] = 1
 
     # bridge generalized adjacency matrix
     BtB = B.T @ B
 
     # bridge graphs
-    H_B = simple_undirected_graph(b)
-    H_BO = simple_undirected_graph(b)
+    H_B = graph(b)
+    H_BO = graph(b)
     for i in range(b):
         for j in range(i + 1, b):
             if BtB[i, j] == 1:
@@ -583,7 +587,7 @@ def correction_number_lower_bound(
                 H_BO.add_edge(i, j)
 
     # correction graphs
-    H_C = simple_undirected_graph(b)
+    H_C = graph(b)
     H_CO = H_BO.__copy__()
     for i in range(b):
         for j in range(i + 1, b):
@@ -606,7 +610,9 @@ def correction_number_lower_bound(
     # enumerate all correction graphs and compute correction number
     num_correction_graphs = 2**num_opt_edges
     # TODO: check that is not too large?
-    logging.debug(f"computing bounds for {num_correction_graphs} correction graphs")
+    logging.debug(
+        f"computing bounds for {num_correction_graphs} correction graphs"
+    )
     xi = d_hi - m
     opt_edges = list(H_CO.edges)
     for k in range(num_correction_graphs):
@@ -625,9 +631,7 @@ def correction_number_lower_bound(
     return xi
 
 
-def bcd_upper_bound(
-    G: simple_undirected_graph, d_lo: int, max_depth: int, depth: int
-) -> int:
+def bcd_upper_bound(G: graph, d_lo: int, max_depth: int, depth: int) -> int:
     """
     Obtains an upper bound on dim(G) by treating it as a target graph of a
     larger graph. The independent set is taken to be a singleton whose

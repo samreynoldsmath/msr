@@ -1,5 +1,8 @@
-## [2023 Aug 22] 0.5.2 PEP8
-- [ ] Converted all files to PEP8 style using `black` and `isort`
+## [2023 Aug 28] 0.5.2 Style and Structure
+- [ ] Converted all files to PEP8 style using `black`, `isort`, and `mypy`
+- [ ] Renamed `simple_undirected_graph` to `graph
+- [ ] Moved `graph_lib` and `generate` modules to `graph`
+- [ ] Renamed `msr/graph/graph_lib` directory to `msr/graph/saved`
 - [ ] Minor optimization of graph generator to use less memory
   - [ ] Generating n=8 graphs takes ~4 hours
 

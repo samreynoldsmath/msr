@@ -5,8 +5,8 @@ from multiprocessing import Pool
 
 import tqdm
 
-from ..file_io import save_graph
-from ..simple_undirected_graph import simple_undirected_graph
+from .file_io import save_graph
+from .graph import graph
 
 
 def generate_and_save_all_graphs_on_n_vertices(n: int, path: str) -> None:
@@ -15,7 +15,7 @@ def generate_and_save_all_graphs_on_n_vertices(n: int, path: str) -> None:
     save_graphs(nx_graphs, path)
 
 
-def generate_all_graphs_on_n_vertices(n: int) -> set[simple_undirected_graph]:
+def generate_all_graphs_on_n_vertices(n: int) -> set[graph]:
     """
     Generates all graphs on n vertices by constructing all graphs isomorphic to
     G and testing if any of these graphs have been seen.
@@ -56,9 +56,7 @@ def generate_all_graphs_on_n_vertices(n: int) -> set[simple_undirected_graph]:
     return graphs
 
 
-def is_not_new_graph(
-    G: simple_undirected_graph, found_hashes: set[int]
-) -> tuple[bool, list[int]]:
+def is_not_new_graph(G: graph, found_hashes: set[int]) -> tuple[bool, set[int]]:
     """Determines if a graph G is isomorphic to a graph in found_hashes."""
     seen = set()
     perms = permutations(range(G.num_verts))
@@ -75,7 +73,7 @@ def is_not_new_graph(
 
 
 def is_not_new_graph_worker(
-    G: simple_undirected_graph, perm: list[int], found_hashes: set[int]
+    G: graph, perm: list[int], found_hashes: set[int]
 ) -> tuple[int, bool]:
     """
     Permute the vertices of G and check if the resulting graph is in
@@ -85,16 +83,14 @@ def is_not_new_graph_worker(
     return hash(H), hash(H) in found_hashes
 
 
-def construct_graph_from_hash(
-    k: int, n: int, n_choose_2: int
-) -> simple_undirected_graph:
+def construct_graph_from_hash(k: int, n: int, n_choose_2: int) -> graph:
     """Constructs a graph on n vertices from an edge hash k."""
 
     # convert k to binary, and pad with zeros to the left
     binary = bin(k)[2:].zfill(n_choose_2)
 
     # convert binary to a list of edges in a graph G
-    G = simple_undirected_graph(num_verts=n)
+    G = graph(num_verts=n)
     for i in range(n - 1):
         for j in range(i + 1, n):
             ij = j - 1 + (i * (2 * n - 3 - i)) // 2
@@ -104,7 +100,7 @@ def construct_graph_from_hash(
     return G
 
 
-def save_graphs(graphs: set[simple_undirected_graph], path: str) -> None:
+def save_graphs(graphs: set[graph], path: str) -> None:
     """Saves graphs to disk."""
 
     # create directory if none exists

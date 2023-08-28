@@ -4,11 +4,11 @@ import matplotlib.pyplot as plt
 from numpy import cos, ndarray, pi, sin, zeros
 from numpy.random import random
 
-from .simple_undirected_graph import simple_undirected_graph
+from .graph import graph
 
 
-def draw_simple_undirected_graph(
-    G: simple_undirected_graph,
+def draw_graph(
+    G: graph,
     embedding: str = "circular",
     labels=False,
     filename: str = "",
@@ -45,7 +45,7 @@ def draw_simple_undirected_graph(
         plt.show()
 
 
-def embed(G: simple_undirected_graph, embedding: str) -> tuple[ndarray, ndarray]:
+def embed(G: graph, embedding: str) -> tuple[ndarray, ndarray]:
     """Embeds G in the plane using a specified embedding."""
     if embedding == "circular":
         return circular_embedding(G)
@@ -56,7 +56,7 @@ def embed(G: simple_undirected_graph, embedding: str) -> tuple[ndarray, ndarray]
     raise ValueError(f'Invalid embedding type "{embedding}"')
 
 
-def circular_embedding(G: simple_undirected_graph) -> tuple[ndarray, ndarray]:
+def circular_embedding(G: graph) -> tuple[ndarray, ndarray]:
     """
     Embeds G in the plane using a circular embedding.
     """
@@ -70,7 +70,7 @@ def circular_embedding(G: simple_undirected_graph) -> tuple[ndarray, ndarray]:
     return x, y
 
 
-def random_embedding(G: simple_undirected_graph) -> tuple[ndarray, ndarray]:
+def random_embedding(G: graph) -> tuple[ndarray, ndarray]:
     """
     Embeds G in the plane using a random embedding.
     """
@@ -80,7 +80,7 @@ def random_embedding(G: simple_undirected_graph) -> tuple[ndarray, ndarray]:
     return x, y
 
 
-def rubber_electric_embedding(G: simple_undirected_graph) -> tuple[ndarray, ndarray]:
+def rubber_electric_embedding(G: graph) -> tuple[ndarray, ndarray]:
     """
     Returns an embedding of G in the plane that minimizes the entropy of the
     edge lengths, which are imagined to be rubber bands, and a repulsive force

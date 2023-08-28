@@ -1,13 +1,13 @@
 from networkx import Graph
 
-from .simple_undirected_graph import simple_undirected_graph
+from .graph import graph
 
 
-def convert_native_to_networkx(G: simple_undirected_graph) -> Graph:
-    """Converts a simple_undirected_graph to a networkx Graph.
+def convert_native_to_networkx(G: graph) -> Graph:
+    """Converts a graph to a networkx Graph.
 
     Args:
-            graph (simple_undirected_graph): The graph to convert.
+            graph (graph): The graph to convert.
 
     Returns:
             Graph: The converted graph.
@@ -21,16 +21,16 @@ def convert_native_to_networkx(G: simple_undirected_graph) -> Graph:
     return nx_graph
 
 
-def convert_networkx_to_native(nx_graph: Graph) -> simple_undirected_graph:
-    """Converts a networkx Graph to a simple_undirected_graph.
+def convert_networkx_to_native(nx_graph: Graph) -> graph:
+    """Converts a networkx Graph to a graph.
 
     Args:
             nx_graph (Graph): The graph to convert.
 
     Returns:
-            simple_undirected_graph: The converted graph.
+            graph: The converted graph.
     """
-    G = simple_undirected_graph(nx_graph.number_of_nodes())
+    G = graph(nx_graph.number_of_nodes())
     for i in range(G.num_verts):
         for j in nx_graph.neighbors(i):
             G.add_edge(i, j)

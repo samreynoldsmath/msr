@@ -19,7 +19,7 @@ def main(n: int):
     """
 
     # directory where graphs are saved
-    graph_dir = f"../msr/graph/graph_lib/n{n}"
+    graph_dir = f"../msr/graph/saved/n{n}"
 
     # compute bounds on all graphs
     bounds_and_names = msr.msr_batch_from_directory(path=graph_dir)
@@ -52,7 +52,7 @@ def main(n: int):
         for name in tqdm.tqdm(names):
             graph_file = name + ".json"
             image_file = f"figs/n{n}" + name[len(graph_dir) :] + ".png"
-            msr.graph.draw_simple_undirected_graph(
+            msr.graph.draw_graph(
                 G=msr.graph.load_graph(graph_file),
                 embedding="min_entropy",
                 filename=image_file,

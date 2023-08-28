@@ -2,10 +2,10 @@ import cvxpy as cp
 from numpy import sqrt
 from numpy.linalg import norm, svd
 
-from .graph.simple_undirected_graph import simple_undirected_graph
+from .graph.graph import graph
 
 
-def msr_sdp_upper_bound(G: simple_undirected_graph, tol: float = 1e-4) -> int:
+def msr_sdp_upper_bound(G: graph, tol: float = 1e-4) -> int:
     """
     Obtains an approximation of $\text{msr}(G)$ using a relaxation of the
     objective function $\text{rank}(A)$ to the trace $\text{tr}(A)$ and casts

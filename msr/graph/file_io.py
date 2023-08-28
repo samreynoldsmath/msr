@@ -1,13 +1,13 @@
 import json
 import os
 
-from .simple_undirected_graph import simple_undirected_graph
+from .graph import graph
 
 
-def load_graph(filename: str) -> simple_undirected_graph:
+def load_graph(filename: str) -> graph:
     with open(filename, "r") as f:
         data = json.load(f)
-    G = simple_undirected_graph(data["num_verts"])
+    G = graph(data["num_verts"])
     for i, j in data["edges"]:
         G.add_edge(i, j)
     if "msr" in data:
@@ -16,7 +16,7 @@ def load_graph(filename: str) -> simple_undirected_graph:
     return G
 
 
-def load_graphs_from_directory(path: str) -> list[simple_undirected_graph]:
+def load_graphs_from_directory(path: str) -> list[graph]:
     graphs = []
     directory = os.fsencode(path)
     for file in os.listdir(directory):
@@ -26,7 +26,7 @@ def load_graphs_from_directory(path: str) -> list[simple_undirected_graph]:
     return graphs
 
 
-def save_graph(G: simple_undirected_graph, filename: str) -> None:
+def save_graph(G: graph, filename: str) -> None:
     edges = []
     for e in G.edges:
         i, j = e.endpoints
@@ -42,7 +42,9 @@ def custom_json_dump(data, filename, indent=4):
 
     def format_list(lst, level):
         if len(lst) > 0 and isinstance(lst[0], list):
-            return ",\n".join(" " * level + json.dumps(sub_list) for sub_list in lst)
+            return ",\n".join(
+                " " * level + json.dumps(sub_list) for sub_list in lst
+            )
         else:
             return ", ".join(json.dumps(item) for item in lst)
 

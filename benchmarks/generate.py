@@ -9,8 +9,8 @@ import msr
 
 
 def main(n: int):
-    path = f"../msr/graph/graph_lib/n{n}"
-    msr.graph.graph_lib.generate_and_save_all_graphs_on_n_vertices(n, path)
+    path = f"../msr/graph/saved/n{n}"
+    msr.graph.generate_and_save_all_graphs_on_n_vertices(n, path)
 
 
 if __name__ == "__main__":
