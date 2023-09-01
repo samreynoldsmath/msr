@@ -16,7 +16,9 @@ class undirected_edge:
     def __str__(self) -> str:
         return str(self.endpoints)
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, undirected_edge):
+            raise TypeError("Can only compare undirected edges.")
         return self.endpoints == other.endpoints
 
     def __hash__(self) -> int:
@@ -379,14 +381,24 @@ class graph:
 
     ### MATRIX REPRESENTATIONS ################################################
 
+    def adjacency_matrix(self) -> ndarray:
+        """Returns the graph Laplacian matrix."""
+        n = self.num_verts
+        A = zeros((n, n))
+        for e in self.edges:
+            i, j = e.endpoints
+            A[i, j] = 1
+            A[j, i] = 1
+        return A
+
     def laplacian(self) -> ndarray:
         """Returns the graph Laplacian matrix."""
         n = self.num_verts
         L = zeros((n, n))
         for e in self.edges:
             i, j = e.endpoints
-            L[i, j] -= 1
-            L[j, i] -= 1
+            L[i, j] = -1
+            L[j, i] = -1
             L[i, i] += 1
             L[j, j] += 1
         return L

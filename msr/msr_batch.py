@@ -1,53 +1,80 @@
 import multiprocessing
 
-import tqdm
+from tqdm import tqdm
 
-from .graph.file_io import load_graphs_from_directory
+from .graph.file_io import files_in_directory, load_graph
 from .graph.graph import graph
 from .msr_bounds import msr_bounds
 
 
-def msr_batch_from_directory(path: str) -> list[tuple[int, int, str]]:
+def msr_batch_from_directory(
+    path: str, quiet: bool = False
+) -> list[tuple[int, int, str]]:
     """
-    Computes the MSR bounds for a batch of graphs in a directory with multiprocessing.
-
-    Parameters
-    ----------
-    directory : str
-            The directory to load the graphs from.
-
-    Returns
-    -------
-    list[tuple[int, int, str]]
-            For each graph, the MSR bounds and the name/id of the graph.
+    Computes the MSR bounds for graphs in a directory with multiprocessing.
     """
-    graphs = load_graphs_from_directory(path)
-    return msr_batch(graphs)
+    filenames = files_in_directory(path)
+    if quiet:
+        return _msr_batch_from_directory_quiet(filenames)
+    else:
+        return _msr_batch_from_directory_loud(filenames)
 
 
-def msr_batch(graphs: list[graph]) -> list[tuple[int, int, str]]:
-    """
-    Computes the MSR bounds for a batch of graphs with multiprocessing.
-
-    Parameters
-    ----------
-    graphs : list[graph]
-            The graphs to compute the MSR bounds for.
-
-    Returns
-    -------
-    list[tuple[int, int, str]]
-            For each graph, the MSR bounds and the name/id of the graph.
-    """
+def _msr_batch_from_directory_loud(
+    filenames: list[str],
+) -> list[tuple[int, int, str]]:
+    """Uses tqdm to show progress."""
     with multiprocessing.Pool() as pool:
         return list(
-            tqdm.tqdm(
-                pool.imap_unordered(_msr_bounds_with_id, graphs),
-                total=len(graphs),
+            tqdm(
+                pool.imap_unordered(_msr_bounds_with_id_from_file, filenames),
+                total=len(filenames),
             )
         )
 
 
-def _msr_bounds_with_id(graph: graph) -> tuple[int, int, str]:
-    d_lo, d_hi = msr_bounds(graph)
-    return d_lo, d_hi, graph.name
+def _msr_batch_from_directory_quiet(
+    filenames: list[str],
+) -> list[tuple[int, int, str]]:
+    """Does not use tqdm to show progress."""
+    with multiprocessing.Pool() as pool:
+        return list(
+            pool.imap_unordered(_msr_bounds_with_id_from_file, filenames)
+        )
+
+
+def _msr_bounds_with_id_from_file(filename: str) -> tuple[int, int, str]:
+    """Helper function for msr_batch_from_directory."""
+    G = load_graph(filename)
+    return _msr_bounds_with_id(G)
+
+
+def msr_batch(
+    graphs: list[graph], quiet: bool = False
+) -> list[tuple[int, int, str]]:
+    """Computes the MSR bounds for a batch of graphs with multiprocessing."""
+    if quiet:
+        return _msr_batch_quiet(graphs)
+    else:
+        return _msr_batch_loud(graphs)
+
+
+def _msr_batch_loud(graphs: list[graph]) -> list[tuple[int, int, str]]:
+    """Uses tqdm to show progress."""
+    N = len(graphs)
+    with multiprocessing.Pool() as pool:
+        return list(
+            tqdm(pool.imap_unordered(_msr_bounds_with_id, graphs), total=N)
+        )
+
+
+def _msr_batch_quiet(graphs: list[graph]) -> list[tuple[int, int, str]]:
+    """Does not use tqdm to show progress."""
+    with multiprocessing.Pool() as pool:
+        return list(pool.imap_unordered(_msr_bounds_with_id, graphs))
+
+
+def _msr_bounds_with_id(G: graph) -> tuple[int, int, str]:
+    """Helper function for msr_batch."""
+    d_lo, d_hi = msr_bounds(G)
+    return d_lo, d_hi, G.name

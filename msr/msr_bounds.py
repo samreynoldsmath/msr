@@ -1,9 +1,10 @@
 import logging
+from enum import Enum
 
 from numpy import zeros
 
 from .graph import graph
-from .msr_sdp import msr_sdp_upper_bound
+from .msr_sdp import msr_sdp_signed_exhaustive, msr_sdp_upper_bound
 from .reduce import reduce
 
 # configure logging
@@ -14,6 +15,50 @@ logging.basicConfig(
     level=logging.WARNING,
     format="%(levelname)s [%(funcName)s %(lineno)s] %(message)s",
 )
+
+
+# Enumeration of strategies for computing bounds on msr(G)
+class msr_strategy(Enum):
+    BCD_LOWER = "bcd-lower"
+    BCD_UPPER = "bcd-upper"
+    CUT_VERT = "cut-vert"
+    CLIQUE = "cliques"
+    EDGE_ADDITION = "edge-add"
+    EDGE_REMOVAL = "edge-rem"
+    INDUCED_SUBGRAPH = "ind-subgraph"
+    SDP_UPPER = "sdp-upper"
+    SDP_SIGNED = "sdp-signed"
+
+
+# configure strategy
+STRATEGY: list[msr_strategy] = [
+    msr_strategy.CUT_VERT,
+    msr_strategy.INDUCED_SUBGRAPH,
+    msr_strategy.CLIQUE,
+    msr_strategy.BCD_LOWER,
+    msr_strategy.EDGE_ADDITION,
+    msr_strategy.SDP_UPPER,
+    # msr_strategy.BCD_UPPER,
+    msr_strategy.SDP_SIGNED,
+]
+
+
+# log strategy
+logging.info("Using strategy: ")
+for strategy in STRATEGY:
+    logging.info(strategy.value + "\n")
+
+
+def msr(G: graph) -> int:
+    """
+    Returns the minimum semidefinite rank of a graph G.
+    """
+    d_lo, d_hi = msr_bounds(G)
+    if d_lo != d_hi:
+        msg = "bounds are not tight: " + str((d_lo, d_hi))
+        logging.error(msg)
+        raise ValueError(msg)
+    return d_lo
 
 
 def msr_bounds(G: graph) -> tuple[int, int]:
@@ -90,7 +135,6 @@ def dim_bounds(G: graph, max_depth: int, depth: int = 0) -> tuple[int, int]:
 	DISCONNECTED GRAPHS
 	-------------------
 	dim(G) = sum(dim(H)) for H a component of G.
-
 	If G is connected, we initialize the bounds to d_lo = 1 and d_hi = n - 1.
 	"""
 
@@ -141,165 +185,18 @@ def dim_bounds(G: graph, max_depth: int, depth: int = 0) -> tuple[int, int]:
         return d_lo, d_hi
 
     """
-	CUT VERTICES
-	------------
-	A proper induced cover {G_1, ..., G_k} such that G_i and G_j intersect at a
-	cut vertex v of G gives dim(G) = sum(dim(G_i))
-	"""
-
-    # check if G has a cut vertex and obtain bounds
-    d_lo_cover, d_hi_cover = bounds_from_cut_vert_induced_cover(
-        G, depth, max_depth
-    )
-
-    # update bounds
-    d_lo = max(d_lo, d_lo_cover)
-    d_hi = min(d_hi, d_hi_cover)
-
-    # check if bounds are tight
-    if check_bounds(d_lo, d_hi, "checking for cut vertices"):
-        return d_lo, d_hi
-
+    ADVANCED STRATEGIES
+    -------------------
+    Loop through advanced strategies until tight bounds are obtained.
     """
-	INDUCED SUBGRAPHS (LOWER BOUND)
-	-------------------------------
-	Whenever H is an induced subgraph of G, dim(H) <= dim(G).
-	"""
-
-    # check all induced subgraphs to obtain a lower bound
-    d_lo_subgraphs = lower_bound_induced_subgraphs(
-        G, d_hi, max_depth, depth=depth + 1
-    )
-
-    # update lower bound
-    d_lo = max(d_lo, d_lo_subgraphs)
-
-    # check if bounds are tight
-    if check_bounds(d_lo, d_hi, "checking induced subgraphs"):
-        return d_lo, d_hi
-
-    """
-	CLIQUES AND PROPER INDUCED COVERS (UPPER BOUND)
-	-----------------------------------------------
-	Obtain a specific proper induced cover by identifying a clique.
-	"""
-
-    # obtain upper bound from cliques
-    d_hi_clique = upper_bound_from_cliques(G, d_lo, depth, max_depth)
-
-    # update upper bound
-    d_hi = min(d_hi, d_hi_clique)
-
-    # check if bounds are tight
-    if check_bounds(d_lo, d_hi, "checking clique upper bound"):
-        return d_lo, d_hi
-
-    """
-	BCD LOWER BOUND
-	---------------
-	Find an independent set and apply bridge-correction decomposition to obtain
-	a lower bound. In certain cases, dim(G) can be computed exactly.
-	"""
-
-    d_lo_bcd, d_hi_bcd = bcd_bounds(G, d_hi, max_depth, depth)
-
-    # update bounds
-    d_lo = max(d_lo, d_lo_bcd)
-    d_hi = min(d_hi, d_hi_bcd)
-
-    # check if bounds are tight
-    if check_bounds(d_lo, d_hi, "checking BCD lower bound"):
-        return d_lo, d_hi
-
-    """
-	EDGE ADDITION
-	-------------
-	Removing an edge can change the dimension by at most 1. Loop over all
-	edges, adding each one and checking if the dimension bounds are improved.
-	"""
-
-    # check if adding an edge can improve the lower bound
-    d_lo, d_hi = bounds_from_edge_addition(G, d_lo, d_hi, max_depth, depth)
-
-    # check if bounds are tight
-    if check_bounds(d_lo, d_hi, "checking edge addition"):
-        return d_lo, d_hi
-
-    """
-	EDGE REMOVAL
-	------------
-	Adding an edge can change the dimension by at most 1. Loop over all edges,
-	removing each one and checking if the dimension bounds are improved.
-	"""
-
-    # TODO: recursion depth maxes out if both edge removal and addition are
-    # both enabled
-
-    # NOTE: edge removal doesn't seem to be much use anyway, probably because
-    # at this point most graphs will have a sharp lower bound, but removing an
-    # edge typically does not decrease the dimension, so the upper bounds is
-    # unlikely to be improved
-
-    edge_removal_max_depth = 0
-
-    if depth >= edge_removal_max_depth:
-        logging.info("skipping edge removal")
-
-    if depth < edge_removal_max_depth:
-        # check if removing an edge can improve the lower bound
-        d_lo, d_hi = bounds_from_edge_removal(G, d_lo, d_hi, max_depth, depth)
-
-        # check if bounds are tight
-        if check_bounds(d_lo, d_hi, "checking edge removal"):
+    for strategy in STRATEGY:
+        d_lo_strategy, d_hi_strategy = run_strategy(
+            strategy.value, G, d_lo, d_hi, max_depth, depth
+        )
+        d_lo = max(d_lo, d_lo_strategy)
+        d_hi = min(d_hi, d_hi_strategy)
+        if check_bounds(d_lo, d_hi, "running strategy " + strategy.value):
             return d_lo, d_hi
-
-    """
-	SDP UPPER BOUND
-	---------------
-	Use semidefinite programming to obtain an upper bound. See the documentation
-	in msr/msr_sdp.py for a summary. A derivation of the approach is given in
-	doc/mth610-semidefprog-final-report-reynolds.pdf.
-	"""
-
-    logging.info("computing upper bound via	SDP")
-    d_hi_sdp = msr_sdp_upper_bound(G)
-
-    # report improvement on upper bound
-    if d_hi_sdp < d_hi:
-        logging.debug(f"SDP improved upper bound from {d_hi} to {d_hi_sdp}")
-    else:
-        logging.debug(f"upper bound not improved with SDP")
-
-    # update upper bound
-    d_hi = min(d_hi, d_hi_sdp)
-
-    # check if bounds are tight
-    if check_bounds(d_lo, d_hi, "checking SDP upper bound"):
-        return d_lo, d_hi
-
-    """
-	TODO: INDUCED COVER UPPER BOUND
-	-------------------------
-	Search over proper induced covers to obtain an upper bound.
-	NOTE: this is likely to lead to a combinatorial explosion.
-	"""
-
-    """
-	BCD UPPER BOUND
-	---------------
-	!!! UNSTABLE
-	Find an upper bound by attempting to construct a larger graph and an
-	independent set such that G is the target graph.
-	"""
-
-    d_hi_bcd = bcd_upper_bound(G, d_lo, max_depth, depth)
-
-    # update upper bound
-    d_hi = min(d_hi, d_hi_bcd)
-
-    # check if bounds are tight
-    if check_bounds(d_lo, d_hi, "checking BCD upper bound"):
-        return d_lo, d_hi
 
     """
 	EXIT WITHOUT TIGHT BOUNDS
@@ -310,6 +207,42 @@ def dim_bounds(G: graph, max_depth: int, depth: int = 0) -> tuple[int, int]:
 
 
 ###############################################################################
+
+
+def run_strategy(
+    strategy_name: str,
+    G: graph,
+    d_lo: int,
+    d_hi: int,
+    max_depth: int,
+    depth: int,
+) -> tuple[int, int]:
+    """Runs a strategy for computing bounds on dim(G)."""
+    if strategy_name == msr_strategy.BCD_LOWER.value:
+        return bcd_bounds(G, d_lo, d_hi, max_depth, depth)
+    if strategy_name == msr_strategy.BCD_UPPER.value:
+        d_hi = bcd_upper_bound(G, d_lo, max_depth, depth)
+        return d_lo, d_hi
+    if strategy_name == msr_strategy.CLIQUE.value:
+        d_hi = upper_bound_from_cliques(G, d_lo, max_depth, depth)
+        return d_lo, d_hi
+    if strategy_name == msr_strategy.CUT_VERT.value:
+        return bounds_from_cut_vert_induced_cover(G, max_depth, depth)
+    if strategy_name == msr_strategy.INDUCED_SUBGRAPH.value:
+        d_lo = lower_bound_induced_subgraphs(G, d_lo, d_hi, max_depth, depth)
+        return d_lo, d_hi
+    if strategy_name == msr_strategy.EDGE_ADDITION.value:
+        return bounds_from_edge_addition(G, d_lo, d_hi, max_depth, depth)
+    if strategy_name == msr_strategy.EDGE_REMOVAL.value:
+        return bounds_from_edge_removal(G, d_lo, d_hi, max_depth, depth)
+    if strategy_name == msr_strategy.SDP_UPPER.value:
+        d_hi = msr_sdp_upper_bound(G)
+        return d_lo, d_hi
+    if strategy_name == msr_strategy.SDP_SIGNED.value:
+        return msr_sdp_signed_exhaustive(G, d_lo)
+    msg = "unknown strategy: " + strategy_name
+    logging.error(msg)
+    raise ValueError(msg)
 
 
 def check_bounds(
@@ -323,8 +256,7 @@ def check_bounds(
         logging.info("bounds match after " + action_name)
     if d_lo > d_hi:
         msg = "lower bound exceeds upper bound after " + action_name
-        logging.error(msg)
-        raise RuntimeError(msg)
+        logging.warning(msg)
     return bounds_match
 
 
@@ -389,8 +321,27 @@ def reduce_and_bound_reduction(
     return G, d_lo, d_hi
 
 
+def lower_bound_induced_subgraphs(
+    G: graph, d_lo: int, d_hi: int, max_depth: int, depth: int
+) -> int:
+    """
+    Returns the maximum lower bound of the dimension of any induced subgraph.
+    """
+    d_lo = 0
+    n = G.num_verts
+    for i in range(n):
+        logging.debug(f"checking induced subgraph {i}")
+        H = G.__copy__()
+        H.remove_vert(i)
+        d_lo_H = dim_bounds(H, max_depth, depth=depth + 1)[0]
+        d_lo = max(d_lo, d_lo_H)
+        if d_lo >= d_hi:
+            return d_lo
+    return d_lo
+
+
 def bounds_from_cut_vert_induced_cover(
-    G: graph, depth: int, max_depth: int
+    G: graph, max_depth: int, depth: int
 ) -> tuple[int, int]:
     """
     Checks if G has a cut vertex. If so, generate a proper induced cover
@@ -419,27 +370,8 @@ def bounds_from_cut_vert_induced_cover(
     return d_lo_cover, d_hi_cover
 
 
-def lower_bound_induced_subgraphs(
-    G: graph, d_hi: int, max_depth: int, depth: int
-) -> int:
-    """
-    Returns the maximum lower bound of the dimension of any induced subgraph.
-    """
-    d_lo = 0
-    n = G.num_verts
-    for i in range(n):
-        logging.debug(f"checking induced subgraph {i}")
-        H = G.__copy__()
-        H.remove_vert(i)
-        d_lo_H = dim_bounds(H, max_depth, depth=depth + 1)[0]
-        d_lo = max(d_lo, d_lo_H)
-        if d_lo >= d_hi:
-            return d_lo
-    return d_lo
-
-
 def upper_bound_from_cliques(
-    G: graph, d_lo: int, depth: int, max_depth: int
+    G: graph, d_lo: int, max_depth: int, depth: int
 ) -> int:
     """
     Returns an upper bound on dim(G) by locating a vertex i that is part of a
@@ -491,6 +423,15 @@ def bounds_from_edge_removal(
     ! DEPRECATED
     Computes bounds on dim(G) by removing edges.
     """
+
+    # TODO: recursion depth maxes out if both edge removal and addition are
+    # both enabled
+
+    # NOTE: edge removal doesn't seem to be much use anyway, probably because
+    # at this point most graphs will have a sharp lower bound, but removing an
+    # edge typically does not decrease the dimension, so the upper bounds is
+    # unlikely to be improved
+
     logging.info("checking bounds from edge removal")
     d_lo_edges = 0
     d_hi_edges = G.num_verts
@@ -510,7 +451,7 @@ def bounds_from_edge_removal(
 
 
 def bcd_bounds(
-    G: graph, d_hi: int, max_depth: int, depth: int
+    G: graph, d_lo: int, d_hi: int, max_depth: int, depth: int
 ) -> tuple[int, int]:
     """
     Computes a lower bound on dim(G) by finding an independent set and applying
@@ -633,6 +574,7 @@ def correction_number_lower_bound(
 
 def bcd_upper_bound(G: graph, d_lo: int, max_depth: int, depth: int) -> int:
     """
+        !!! UNSTABLE
     Obtains an upper bound on dim(G) by treating it as a target graph of a
     larger graph. The independent set is taken to be a singleton whose
     neighborhood forms a clique in the target graph.
@@ -650,11 +592,7 @@ def bcd_upper_bound(G: graph, d_lo: int, max_depth: int, depth: int) -> int:
 
         # clique discovery
         # TODO: this is suboptimal
-        clique = set(
-            [
-                i,
-            ]
-        )
+        clique = set([i])
         for j in N:
             if all([G.is_edge(j, k) for k in clique]):
                 clique.add(j)

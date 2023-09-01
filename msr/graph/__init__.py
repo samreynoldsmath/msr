@@ -1,4 +1,4 @@
-from .draw import draw_graph
+from .draw import draw_graph, draw_graphs
 from .file_io import load_graph, load_graphs_from_directory, save_graph
 from .generate import generate_and_save_all_graphs_on_n_vertices
 from .graph import graph

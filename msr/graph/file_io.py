@@ -5,40 +5,70 @@ from .graph import graph
 
 
 def load_graph(filename: str) -> graph:
+    """Load a graph from a json file."""
+
+    # load graph data from json file
     with open(filename, "r") as f:
         data = json.load(f)
+
+    # create graph object
     G = graph(data["num_verts"])
+
+    # add edges
     for i, j in data["edges"]:
         G.add_edge(i, j)
+
+    # add name
+    if "name" in data:
+        G.name = data["name"]
+    else:
+        G.name = filename.split("/")[-1].split(".")[0]
+
+    # add known msr
     if "msr" in data:
         G.known_msr = data["msr"]
-    G.name = filename[:-5]
+
     return G
 
 
-def load_graphs_from_directory(path: str) -> list[graph]:
-    graphs = []
-    directory = os.fsencode(path)
+def files_in_directory(path: str) -> list[str]:
+    """Returns all filenames in a directory."""
+    filenames = []
+    abspath = os.path.abspath(path)
+    directory = os.fsencode(abspath)
     for file in os.listdir(directory):
         filename = os.fsdecode(file)
+        abs_filename = os.path.join(abspath, filename)
+        filenames.append(abs_filename)
+    return filenames
+
+
+def load_graphs_from_directory(path: str) -> list[graph]:
+    """Load all graphs from a directory."""
+    filenames = files_in_directory(path)
+    graphs = []
+    for filename in filenames:
         if filename.endswith(".json"):
             graphs.append(load_graph(path + "/" + filename))
     return graphs
 
 
 def save_graph(G: graph, filename: str) -> None:
+    """Save a graph to a json file."""
     edges = []
     for e in G.edges:
         i, j = e.endpoints
         edges.append([i, j])
-    data = {"num_verts": G.num_verts, "edges": edges}
-    custom_json_dump(data, filename)
+    data = {
+        "name": G.name,
+        "num_verts": G.num_verts,
+        "edges": edges,
+    }
+    _custom_json_dump(data, filename)
 
 
-def custom_json_dump(data, filename, indent=4):
-    """
-    Custom JSON dump function that only expands the first level of lists.
-    """
+def _custom_json_dump(data, filename, indent=4):
+    """Custom JSON dump function that expands the first level of lists."""
 
     def format_list(lst, level):
         if len(lst) > 0 and isinstance(lst[0], list):

@@ -53,6 +53,10 @@ def generate_all_graphs_on_n_vertices(n: int) -> set[graph]:
     # report number of graphs
     print(f"Number of connected graphs on {n} vertices: {len(graphs)}")
 
+    predicted = num_graphs_on_n_verts(n)
+    if len(graphs) != predicted:
+        print(f"WARNING: number of graphs on {n} vertices is not {predicted}")
+
     return graphs
 
 
@@ -116,4 +120,36 @@ def save_graphs(graphs: set[graph], path: str) -> None:
         num_digits = ceil(log10(n_choose_2))
         k_str = str(k).zfill(num_digits)
         filename = f"{path}/k{k_str}.json"
+        G.name = f"n{n}k{k_str}"
         save_graph(G, filename)
+
+
+def num_graphs_on_n_verts(n: int) -> int:
+    """
+    OEIS A001349: Number of connected graphs with n nodes.
+    """
+    if n > 20:
+        raise ValueError("n must be <= 20")
+    a = [
+        1,
+        1,
+        1,
+        2,
+        6,
+        21,
+        112,
+        853,
+        11117,
+        261080,
+        11716571,
+        1006700565,
+        164059830476,
+        50335907869219,
+        29003487462848061,
+        31397381142761241960,
+        63969560113225176176277,
+        245871831682084026519528568,
+        1787331725248899088890200576580,
+        24636021429399867655322650759681644,
+    ]
+    return a[n]

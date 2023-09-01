@@ -1,6 +1,7 @@
 .vscode
 .VSCodeCounter
 benchmarks/figs/
+benchmarks/results/
 msr/graph/saved/
 
 bin/
