@@ -22,7 +22,8 @@ actually do any linear algebra.
  - In addition to SDP, this package also uses combinatorial techniques to
 	compute bounds on the MSR, some of which are well-known in the literature,
 	and some of which are still under development.
- - The package uses a custom graph representation, but supports conversion to/from [networkx](https://networkx.org/) graphs.
+ - The package uses a custom graph representation, but supports conversion
+  	to\from [networkx](https://networkx.org/) graphs.
 - The package is not designed with efficiency in mind, and probably will not
 	scale well to large graphs.
 
@@ -32,6 +33,7 @@ This project is written in Python 3.11 and uses the following packages:
 - [matplotlib](https://matplotlib.org/) is used for visualization
 - [networkx](https://networkx.org/) is used for graph isomorphism testing
 - [tqdm](https://tqdm.github.io/) is used for progress bars
+See [requirements.txt](requirements.txt) for a complete list of dependencies.
 
 ## Author
 [Sam Reynolds](https://sites.google.com/view/samreynolds)

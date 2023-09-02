@@ -1,4 +1,13 @@
-## [2023 Sep xx] 0.6.0 Signed SDP
+## [2023 Sep 02] 0.6.1 Signed SDP
+- SDP tweaks
+  - Added cyclic-search version that only uses edges that are part of an even cycle
+  - Fixed bug that gave incorrect bounds for some graphs due to incorrect constraints
+  - Added safety check to ensure that constraints are satisfied
+- Added maximum independent set algorithm to `graph`, now used by BCD
+- Added `tests` directory, with so far only one test for MSR on graphs on six vertices or less
+  - Known values stored in `msr/soln`, which a future version will use in a lookup table
+
+## [2023 Sep 01] 0.6.0 Signed SDP
 - Introduced signed SDP relaxation
   - Simple version flips exactly one edge sign at a time
   - Full version flips all possible edge signs at a time

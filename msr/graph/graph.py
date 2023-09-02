@@ -121,18 +121,6 @@ class graph:
         """Returns the number of isolated vertices in the graph."""
         return len([i for i in range(self.num_verts) if self.vert_deg(i) == 0])
 
-    def clique_containing_vert(self, i: int) -> bool:
-        """Returns a maximal clique containing the vertex i."""
-        raise NotImplementedError()
-        # N = self.vert_neighbors(i)
-        # for j in N:
-        # 	for k in N:
-        # 		if j != k:
-        # 			print(j, k, self.is_edge(j, k))
-        # 			if not self.is_edge(j, k):
-        # 				return False
-        # return True
-
     def permute_verts(self, perm: list[int]) -> graph:
         """ "
         Returns a graph with vertices permuted according to the given list.
@@ -146,45 +134,6 @@ class graph:
             i, j = e.endpoints
             H.add_edge(perm[i], perm[j])
         return H
-
-    ### VERTEX TESTS ##########################################################
-
-    def vert_is_pendant(self, i: int) -> bool:
-        """Returns True if the given vertex is a pendant vertex."""
-        return self.vert_deg(i) == 1
-
-    def vert_is_subdivided(self, i: int) -> bool:
-        """Returns True if the given vertex is subdivided."""
-        if self.vert_deg(i) != 2:
-            return False
-        j, k = self.vert_neighbors(i)
-        return not self.is_edge(j, k)
-
-    def vert_is_redundant(self, i: int) -> bool:
-        """
-        Returns True if the given vertex is adjacent to every other vertex.
-        """
-        return self.vert_deg(i) == self.num_verts - 1
-
-    def verts_are_duplicate_pair(self, i: int, j: int) -> bool:
-        """Returns True if i,j are adjacent and have the same neighbors."""
-        if not self.is_edge(i, j):
-            return False
-        Ni = self.vert_neighbors(i)
-        Ni.remove(j)
-        Nj = self.vert_neighbors(j)
-        Nj.remove(i)
-        return Ni == Nj
-
-    def vert_is_cut_vert(self, i: int) -> bool:
-        """Returns True if the given vertex is a cut vertex."""
-        if self.num_verts < 3:
-            return False
-        if self.vert_deg(i) < 2:
-            return False
-        G = self.__copy__()
-        G.remove_vert(i)
-        return not G.is_connected()
 
     def get_a_cut_vert(self) -> int | None:
         """
@@ -228,6 +177,68 @@ class graph:
                 candidates.discard(j)
 
         return indep_set
+
+    def maximum_independent_set(self) -> set[int]:
+        """Returns a maximum independent set."""
+
+        alpha = 0
+        num_subgraphs = 2**self.num_verts
+        for k in range(num_subgraphs - 1, 0, -1):
+            binary = bin(k)[2:].zfill(self.num_verts)
+            candidate_size = binary.count("1")
+            if candidate_size <= alpha:
+                continue
+            candidate = set()
+            for i, bit in enumerate(binary):
+                if bit == "1":
+                    candidate.add(i)
+            if self.is_independent_set(candidate):
+                alpha = candidate_size
+                indep_set = candidate.copy()
+        return indep_set
+
+    def is_independent_set(self, S: set[int]) -> bool:
+        """Returns True if S is an independent set."""
+        return all(not self.is_edge(i, j) for i in S for j in S if i != j)
+
+    ### VERTEX TESTS ##########################################################
+
+    def vert_is_pendant(self, i: int) -> bool:
+        """Returns True if the given vertex is a pendant vertex."""
+        return self.vert_deg(i) == 1
+
+    def vert_is_subdivided(self, i: int) -> bool:
+        """Returns True if the given vertex is subdivided."""
+        if self.vert_deg(i) != 2:
+            return False
+        j, k = self.vert_neighbors(i)
+        return not self.is_edge(j, k)
+
+    def vert_is_redundant(self, i: int) -> bool:
+        """
+        Returns True if the given vertex is adjacent to every other vertex.
+        """
+        return self.vert_deg(i) == self.num_verts - 1
+
+    def verts_are_duplicate_pair(self, i: int, j: int) -> bool:
+        """Returns True if i,j are adjacent and have the same neighbors."""
+        if not self.is_edge(i, j):
+            return False
+        Ni = self.vert_neighbors(i)
+        Ni.remove(j)
+        Nj = self.vert_neighbors(j)
+        Nj.remove(i)
+        return Ni == Nj
+
+    def vert_is_cut_vert(self, i: int) -> bool:
+        """Returns True if the given vertex is a cut vertex."""
+        if self.num_verts < 3:
+            return False
+        if self.vert_deg(i) < 2:
+            return False
+        G = self.__copy__()
+        G.remove_vert(i)
+        return not G.is_connected()
 
     ### EDGES #################################################################
 

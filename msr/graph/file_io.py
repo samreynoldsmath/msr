@@ -24,10 +24,6 @@ def load_graph(filename: str) -> graph:
     else:
         G.name = filename.split("/")[-1].split(".")[0]
 
-    # add known msr
-    if "msr" in data:
-        G.known_msr = data["msr"]
-
     return G
 
 
@@ -49,7 +45,7 @@ def load_graphs_from_directory(path: str) -> list[graph]:
     graphs = []
     for filename in filenames:
         if filename.endswith(".json"):
-            graphs.append(load_graph(path + "/" + filename))
+            graphs.append(load_graph(filename))
     return graphs
 
 

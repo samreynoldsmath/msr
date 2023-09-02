@@ -46,6 +46,7 @@ def draw_graph(
     embedding: str = "circular",
     labels=False,
     filename: str = "",
+    title: str = "",
 ) -> None:
     """Draw a planar embedding of the vector graph G."""
 
@@ -68,6 +69,8 @@ def draw_graph(
     # draw the graph
     plt.axis("off")
     plt.axis("equal")
+    if len(title) > 0:
+        plt.title(title)
     if len(filename) > 0:
         # create directory if none exists
         path = os.path.dirname(filename)

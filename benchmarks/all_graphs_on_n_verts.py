@@ -1,7 +1,7 @@
 import os
 import sys
 
-import tqdm
+from tqdm import tqdm
 
 current_dir = os.getcwd()
 parent_dir = os.path.abspath(os.path.join(current_dir, ".."))
@@ -9,20 +9,22 @@ sys.path.append(parent_dir)
 
 import msr
 
+SAVE_FIGS = True
+QUIET = False
+
 
 def main(n: int):
     """
     Benchmark the implementation of msr_bounds() by computing bounds on all
     connected graphs on n vertices (up to isomorphism). A report on how
-    accurate the bounds are is generated. A rough estimate of efficiency is
-    obtained with timing the execution with timeit.
+    accurate the bounds are is generated.
     """
 
     # directory where graphs are saved
     graph_dir = f"../msr/graph/saved/n{n}/"
 
     # compute bounds on all graphs
-    bounds_and_names = msr.msr_batch_from_directory(path=graph_dir)
+    bounds_and_names = msr.msr_batch_from_directory(path=graph_dir, quiet=QUIET)
 
     # find troublemakers
     not_tight = 0
@@ -48,10 +50,10 @@ def main(n: int):
 
     # save figures of troublemakers
     fig_dir = f"figs/n{n}/"
-    if len(names) > 0:
+    if SAVE_FIGS and len(names) > 0:
         print("saving figures...")
-        for name in tqdm.tqdm(names):
-            graph_file = graph_dir + name + ".json"
+        for name in tqdm(names):
+            graph_file = graph_dir + name[2:] + ".json"
             image_file = fig_dir + name + ".png"
             msr.graph.draw_graph(
                 G=msr.graph.load_graph(graph_file),
