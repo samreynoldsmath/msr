@@ -1,10 +1,11 @@
 import logging
+from itertools import combinations
 
 import cvxpy as cp
-from numpy import diag, ndarray, sqrt, zeros
+from numpy import ndarray, sqrt, zeros, sign
 from numpy.linalg import norm, svd
 
-from .graph.graph import graph
+from .graph.graph import graph, undirected_edge
 
 
 def msr_sdp_signed(edge_signs: ndarray, tol: float = 1e-4) -> int:
@@ -12,8 +13,6 @@ def msr_sdp_signed(edge_signs: ndarray, tol: float = 1e-4) -> int:
     Obtains an upper bound on $\text{msr}(G)$ by solving a semidefinite program
     with signed constraints on the entries of the generalized adjacency matrix.
     """
-
-    logging.debug("beginning signed SDP relaxation")
 
     # get number of vertices
     n = edge_signs.shape[0]
@@ -54,7 +53,7 @@ def msr_sdp_signed(edge_signs: ndarray, tol: float = 1e-4) -> int:
 
     # set up and solve SDP
     prob = cp.Problem(cp.Minimize(cp.trace(X)), constraints)
-    prob.solve()
+    prob.solve(eps=1e-6)
 
     # round near-zero values to zero
     X.value[abs(X.value) < tol] = 0
@@ -88,9 +87,7 @@ def _have_same_non_diagonal_sign_pattern(
     """
     for i in range(n):
         for j in range(i + 1, n):
-            if A[i, j] == 0 and B[i, j] == 0:
-                continue
-            if A[i, j] * B[i, j] <= 0:
+            if sign(A[i, j]) != sign(B[i, j]):
                 return False
     return True
 
@@ -127,14 +124,16 @@ def msr_sdp_signed_simple(G: graph, d_lo: int, tol=1e-4) -> int:
     logging.info("beginning simple search with SDP relaxation")
     n = G.num_verts
     d_hi = n
+    num_edges = G.num_edges()
     edge_signs = G.adjacency_matrix()
-    for ij in G.edges:
+    for k, ij in enumerate(G.edges):
         i, j = ij.endpoints
         edge_signs[i, j] = -1
         edge_signs[j, i] = -1
+        logging.debug( f"SDP signed simple {k} /  {num_edges}")
         d = msr_sdp_signed(edge_signs, tol)
         if d <= d_lo:
-            logging.info(f"simple search succeeded with edge {ij.endpoints}")
+            logging.info(f"simple search succeeded")
             return d
         d_hi = min(d_hi, d)
         edge_signs[i, j] = +1
@@ -148,45 +147,56 @@ def msr_sdp_signed_cycle_search(G: graph, d_lo: int, tol=1e-4) -> int:
     Flips sign of each edge in turn to find the minimum rank of a positive
     semidefinite generalized adjacency matrix.
     """
-    logging.info("beginning search with signed SDP relaxation")
-
-    # exclude edges not part of an even cycle
-    A = G.adjacency_matrix()
-    D = diag(A.sum(axis=1))
-    A2 = A @ A
-    A4 = A2 @ A2
-    cycle_4 = diag(A4 - 2 * D)
+    logging.info("beginning search with signed-cycle SDP relaxation")
 
     # find edges that are part of an even cycle
-    edge_list = []
-    for i in range(G.num_verts):
-        for j in range(i + 1, G.num_verts):
-            if cycle_4[i] > 0 and cycle_4[j] > 0 and A[i, j] > 0:
-                edge_list.append((i, j))
+    edge_list = _edges_in_induced_even_cycle(G)
+    e = len(edge_list)
 
     # search over edges
     n = G.num_verts
-    e = len(edge_list)
     if e < 1:
         logging.info("no edges to search over")
-        return 0
+        return n
     num_signs = 2**e
     logging.info(f"searching over {num_signs} possible edge signs")
     d_hi = n
+    A = G.adjacency_matrix()
     for k in range(num_signs):
-        edge_signs = zeros((n, n), dtype=int)
+        edge_signs = A.copy()
         binary = bin(k)[2:].zfill(e)
         for ij, idx in zip(edge_list, range(e)):
-            i, j = ij
+            i, j = ij.endpoints
             edge_signs[i, j] = 1 - 2 * int(binary[idx])
             edge_signs[j, i] = edge_signs[i, j]
+        logging.debug( f"SDP signed cycle {k} /  {num_signs}")
         d = msr_sdp_signed(edge_signs, tol)
         d_hi = min(d_hi, d)
         if d_hi <= d_lo:
-            logging.info(f"search succeeded with iter {k}")
+            logging.info(f"signed cycle search succeeded")
             return d_hi
-    logging.info(f"search failed: breadth {num_signs}")
+    logging.info(f"signed cycle search exited without tight bound")
     return d_hi
+
+
+def _edges_in_induced_even_cycle(G: graph) -> list[undirected_edge]:
+    """Returns set of edges in an induced even cycle."""
+    n = G.num_verts
+    max_num_verts_induced_cycle = 2 * (n // 2)
+    edges: set[undirected_edge] = set()
+
+    # loop over induced subgraphs with even number of vertices >= 4
+    for m in range(4, max_num_verts_induced_cycle + 1, 2):
+        for vert_tuple in combinations(range(n), m):
+            vert_set = set(vert_tuple)
+            H = G.induced_subgraph(vert_set)
+            if H.is_a_cycle():
+                for ij in combinations(vert_set, 2):
+                    i, j = ij
+                    if G.is_edge(i, j):
+                        edges.add(undirected_edge(i, j))
+
+    return list(edges)
 
 
 def msr_sdp_signed_exhaustive(G: graph, d_lo: int, tol=1e-4) -> int:
@@ -200,7 +210,6 @@ def msr_sdp_signed_exhaustive(G: graph, d_lo: int, tol=1e-4) -> int:
     if e < 1:
         return 0
     num_signs = 2**e
-    logging.info(f"searching over {num_signs} possible edge signs")
     d_hi = n
     edge_list = list(G.edges)
     for k in range(num_signs):
@@ -210,12 +219,11 @@ def msr_sdp_signed_exhaustive(G: graph, d_lo: int, tol=1e-4) -> int:
             i, j = ij.endpoints
             edge_signs[i, j] = 1 - 2 * int(binary[idx])
             edge_signs[j, i] = edge_signs[i, j]
+        logging.debug( f"SDP exhaustive {k} /  {num_signs}")
         d = msr_sdp_signed(edge_signs, tol)
         d_hi = min(d_hi, d)
         if d_hi <= d_lo:
-            print("%6d / %6d (%3.4g %%)" % (k, num_signs, 100 * k / num_signs))
-            logging.info(f"exhaustive search succeeded with iter {k}")
+            logging.info(f"exhaustive search succeeded")
             return d_hi
-    print("%6d / %6d (%3.4g %%)" % (k, num_signs, 100 * k / num_signs))
-    logging.warning(f"exhaustive search failed: breadth {num_signs}")
+    logging.warning(f"exhaustive search failed")
     return d_hi

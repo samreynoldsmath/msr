@@ -109,10 +109,10 @@ def check_stopping_criteria(G: graph) -> bool:
         logging.debug("reduction stopped because graph is disconnected")
     if not stop:
         stop = G.num_verts < 3 or G.is_complete() or G.is_a_tree()
-        logging.debug("reduction succeeded")
     if not stop:
         # more expensive check
         stop = G.is_a_cycle()
+    if stop:
         logging.debug("reduction succeeded")
     return stop
 

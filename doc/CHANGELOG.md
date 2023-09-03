@@ -1,3 +1,8 @@
+## [2023 Sep 03] 0.6.2 Signed SDP
+- Modified edges to be considered in signed-cyclic SDP to only include edges that are part of an *induced* even cycle
+- Added `induced_subgraph` method to `graph`
+- Logging tweaks
+
 ## [2023 Sep 02] 0.6.1 Signed SDP
 - SDP tweaks
   - Added cyclic-search version that only uses edges that are part of an even cycle

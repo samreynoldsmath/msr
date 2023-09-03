@@ -16,6 +16,9 @@ class undirected_edge:
     def __str__(self) -> str:
         return str(self.endpoints)
 
+    def __repr__(self) -> str:
+        return str(self)
+
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, undirected_edge):
             raise TypeError("Can only compare undirected edges.")
@@ -53,12 +56,16 @@ class graph:
         self.known_msr = None
 
     def __str__(self) -> str:
-        s = f"Vertex count: {self.num_verts}"
+        s = self.name +"\n"
+        s += f"Vertex count: {self.num_verts}"
         s += "\nNumber of edges: " + str(self.num_edges())
         s += "\nEdges:"
-        for e in self.edges:
-            s += "\n" + str(e)
+        for k, e in enumerate(self.edges):
+            s += "\n%3d\t" % k + str(e)
         return s
+
+    def __repr__(self) -> str:
+        return str(self)
 
     def __copy__(self):
         G = graph(self.num_verts)
@@ -260,6 +267,21 @@ class graph:
             return False
         return undirected_edge(i, j) in self.edges
 
+    ### INDUCED SUBGRAPHS #####################################################
+
+    def induced_subgraph(self, vert_set: set[int]) -> graph:
+        """
+        Returns the induced subgraph on the given set of vertices.
+        """
+        H = graph(len(vert_set))
+        vert_list = list(vert_set)
+        for i in range(len(vert_set)):
+            for j in range(i + 1, len(vert_set)):
+                if self.is_edge(vert_list[i], vert_list[j]):
+                    H.add_edge(i, j)
+        return H
+
+
     ### COMPONENTS ############################################################
 
     def connected_components(self) -> list[graph]:
@@ -395,7 +417,7 @@ class graph:
     def adjacency_matrix(self) -> ndarray:
         """Returns the graph Laplacian matrix."""
         n = self.num_verts
-        A = zeros((n, n))
+        A = zeros((n, n), dtype=int)
         for e in self.edges:
             i, j = e.endpoints
             A[i, j] = 1
@@ -405,7 +427,7 @@ class graph:
     def laplacian(self) -> ndarray:
         """Returns the graph Laplacian matrix."""
         n = self.num_verts
-        L = zeros((n, n))
+        L = zeros((n, n), dtype=int)
         for e in self.edges:
             i, j = e.endpoints
             L[i, j] = -1

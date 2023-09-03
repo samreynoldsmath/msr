@@ -18,7 +18,7 @@ logging.basicConfig(
     filemode="w",
     encoding="utf-8",
     level=logging.WARNING,
-    format="%(levelname)s [%(funcName)s %(lineno)s] %(message)s",
+    format="%(levelname)s [%(filename)s(%(lineno)s):%(funcName)s] %(message)s",
 )
 
 
@@ -32,9 +32,9 @@ class msr_strategy(Enum):
     EDGE_REMOVAL = "edge-rem"
     INDUCED_SUBGRAPH = "ind-subgraph"
     SDP_UPPER = "sdp-upper"
-    SDP_SIGNED_EXHAUSTIVE = "sdp-signed"
+    SDP_SIGNED_EXHAUSTIVE = "sdp-signed-exhaustive"
     SDP_SIGNED_SIMPLE = "sdp-signed-simple"
-    SDP_SIGNED_SEARCH = "sdp-signed-search"
+    SDP_SIGNED_CYCLE = "sdp-signed-cycle"
 
 
 # configure strategy
@@ -43,19 +43,17 @@ STRATEGY: list[msr_strategy] = [
     msr_strategy.INDUCED_SUBGRAPH,
     msr_strategy.CLIQUE_UPPER,
     msr_strategy.BCD_LOWER,
-    msr_strategy.SDP_UPPER,
-    msr_strategy.SDP_SIGNED_SIMPLE,
+    msr_strategy.SDP_SIGNED_CYCLE,
     msr_strategy.EDGE_ADDITION,
     msr_strategy.BCD_UPPER,
-    msr_strategy.SDP_SIGNED_SEARCH,
-    # msr_strategy.SDP_SIGNED_EXHAUSTIVE,
 ]
 
 
 # log strategy
-logging.info("Using strategy: ")
-for strategy in STRATEGY:
-    logging.info(strategy.value)
+msg = "Using strategy: "
+for k, strategy in enumerate(STRATEGY):
+    msg += "\n%2d.\t" % k + strategy.value
+logging.info(msg)
 
 
 def msr(G: graph) -> int:
@@ -116,7 +114,7 @@ def dim_bounds(G: graph, max_depth: int, depth: int = 0) -> tuple[int, int]:
     """
 
     # log recursion depth
-    logging.info("recursion depth: " + str(depth))
+    logging.info("RECURSION DEPTH: " + str(depth))
     if depth > max_depth:
         msg = "recursion depth limit reached"
         logging.error(msg)
@@ -226,7 +224,7 @@ def run_strategy(
     if strategy_name == msr_strategy.SDP_SIGNED_SIMPLE.value:
         d_hi = msr_sdp_signed_simple(G, d_lo)
         return d_lo, d_hi
-    if strategy_name == msr_strategy.SDP_SIGNED_SEARCH.value:
+    if strategy_name == msr_strategy.SDP_SIGNED_CYCLE.value:
         d_hi = msr_sdp_signed_cycle_search(G, d_lo)
         return d_lo, d_hi
     msg = "unknown strategy: " + strategy_name
@@ -288,7 +286,6 @@ def reduce_and_bound_reduction(
     # if G was disconnected by the reduction, return bounds for each component
     if not G.is_connected():
         d_lo, d_hi, _ = dim_bounds_simple(G, max_depth, depth)
-        # d_lo, d_hi = dim_bounds(G, max_depth, depth=depth + 1)
         d_lo += d_diff
         d_hi += d_diff
         return G, d_lo, d_hi
@@ -569,7 +566,7 @@ def bcd_upper_bound(G: graph, d_lo: int, max_depth: int, depth: int) -> int:
     n = G.num_verts
 
     # TODO: this fails for n too large... why?
-    if n > 6:
+    if n > 7:
         return n
 
     d_hi_bcd = n
