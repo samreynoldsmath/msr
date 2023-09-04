@@ -21,7 +21,7 @@ def draw_graphs(
     if len(directory) == 0:
         filenames = ["" for _ in range(len(graphs))]
     else:
-        filenames = [f"{directory}/{G.name}.png" for G in graphs]
+        filenames = [f"{directory}/{hash(G)}.png" for G in graphs]
 
     with Pool() as pool:
         list(
@@ -59,7 +59,7 @@ def draw_graph(
     for i in range(n):
         plt.plot(x[i], y[i], "ko")
         if labels:
-            plt.text(x[i] + 0.05 * diam, y[i] + 0.05 * diam, i)
+            plt.text(x[i] * (1 + 0.05 * diam), y[i] * (1 + 0.05 * diam), i)
 
     # draw the edges
     for e in G.edges:

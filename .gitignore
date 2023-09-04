@@ -3,6 +3,7 @@
 benchmarks/figs/
 benchmarks/results/
 msr/graph/saved/
+msr/soln/
 
 bin/
 lib/

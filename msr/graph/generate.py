@@ -46,7 +46,9 @@ def generate_all_graphs_on_n_vertices(n: int) -> set[graph]:
     # reconstruct graphs from hashes
     graphs = set()
     for k in found_hashes:
-        G = construct_graph_from_hash(k, n, n_choose_2)
+        # G = construct_graph_from_hash(k, n, n_choose_2)
+        G = graph(num_verts=n)
+        G.build_from_hash(k)
         if G.is_connected():
             graphs.add(G)
 
@@ -114,13 +116,7 @@ def save_graphs(graphs: set[graph], path: str) -> None:
     # save graphs
     print(f"Saving graphs to {path}")
     for G in tqdm.tqdm(graphs):
-        k = hash(G)
-        n = G.num_verts
-        n_choose_2 = n * (n - 1) // 2
-        num_digits = ceil(log10(n_choose_2))
-        k_str = str(k).zfill(num_digits)
-        filename = f"{path}/k{k_str}.json"
-        G.name = f"n{n}k{k_str}"
+        filename = f"{path}/k{hash(G)}.json"
         save_graph(G, filename)
 
 

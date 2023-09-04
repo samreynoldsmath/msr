@@ -44,20 +44,17 @@ class graph:
 
     num_verts: int
     edges: set[undirected_edge]
-    name: str
     known_msr: Optional[int]
     _is_connected_flag: Optional[bool]
 
     def __init__(self, num_verts: int) -> None:
         self.set_num_verts(num_verts)
         self.edges = set()
-        self.name = f"graph on {num_verts} vertices"
         self._is_connected_flag = None
         self.known_msr = None
 
     def __str__(self) -> str:
-        s = self.name +"\n"
-        s += f"Vertex count: {self.num_verts}"
+        s = f"Vertex count: {self.num_verts}"
         s += "\nNumber of edges: " + str(self.num_edges())
         s += "\nEdges:"
         for k, e in enumerate(self.edges):
@@ -82,6 +79,24 @@ class graph:
                     ij = j - 1 + (i * (2 * n - 3 - i)) // 2
                     binary = binary[:ij] + "1" + binary[ij + 1 :]
         return int(binary, 2)
+
+    ### CONSTRUCTION ##########################################################
+
+    def build_from_hash(self, hash: int) -> None:
+        """
+        Builds the graph from its hash value.
+        """
+        n = self.num_verts
+        n_choose_2 = n * (n - 1) // 2
+        if hash < 0 or hash >= 2**n_choose_2:
+            raise ValueError("Hash value out of bounds.")
+        binary = bin(hash)[2:].zfill(n_choose_2)
+        self.edges = set()
+        for i in range(n - 1):
+            for j in range(i + 1, n):
+                if binary[0] == "1":
+                    self.add_edge(i, j)
+                binary = binary[1:]
 
     ### VERTICES ##############################################################
 
@@ -280,7 +295,6 @@ class graph:
                 if self.is_edge(vert_list[i], vert_list[j]):
                     H.add_edge(i, j)
         return H
-
 
     ### COMPONENTS ############################################################
 

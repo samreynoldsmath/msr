@@ -2,7 +2,7 @@ import logging
 from itertools import combinations
 
 import cvxpy as cp
-from numpy import ndarray, sqrt, zeros, sign
+from numpy import ndarray, sign, sqrt, zeros
 from numpy.linalg import norm, svd
 
 from .graph.graph import graph, undirected_edge
@@ -130,7 +130,7 @@ def msr_sdp_signed_simple(G: graph, d_lo: int, tol=1e-4) -> int:
         i, j = ij.endpoints
         edge_signs[i, j] = -1
         edge_signs[j, i] = -1
-        logging.debug( f"SDP signed simple {k} /  {num_edges}")
+        logging.debug(f"SDP signed simple {k} /  {num_edges}")
         d = msr_sdp_signed(edge_signs, tol)
         if d <= d_lo:
             logging.info(f"simple search succeeded")
@@ -169,7 +169,7 @@ def msr_sdp_signed_cycle_search(G: graph, d_lo: int, tol=1e-4) -> int:
             i, j = ij.endpoints
             edge_signs[i, j] = 1 - 2 * int(binary[idx])
             edge_signs[j, i] = edge_signs[i, j]
-        logging.debug( f"SDP signed cycle {k} /  {num_signs}")
+        logging.debug(f"SDP signed cycle {k} / {num_signs}")
         d = msr_sdp_signed(edge_signs, tol)
         d_hi = min(d_hi, d)
         if d_hi <= d_lo:
@@ -219,7 +219,7 @@ def msr_sdp_signed_exhaustive(G: graph, d_lo: int, tol=1e-4) -> int:
             i, j = ij.endpoints
             edge_signs[i, j] = 1 - 2 * int(binary[idx])
             edge_signs[j, i] = edge_signs[i, j]
-        logging.debug( f"SDP exhaustive {k} /  {num_signs}")
+        logging.debug(f"SDP exhaustive {k} /  {num_signs}")
         d = msr_sdp_signed(edge_signs, tol)
         d_hi = min(d_hi, d)
         if d_hi <= d_lo:

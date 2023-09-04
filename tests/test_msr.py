@@ -14,12 +14,13 @@ def test_msr_small():
 
 def helper(n):
     test_dir = os.path.dirname(__file__)
-    json_path = os.path.join(test_dir, f"../msr/soln/n{n}.json")
+    json_filename = os.path.join(test_dir, f"soln/n{n}.json")
     graph_dir = os.path.join(test_dir, f"../msr/graph/saved/n{n}/")
 
-    d = json.load(open(json_path, "r"))
-    bounds_and_names = msr.msr_batch_from_directory(graph_dir, quiet=True)
+    d = json.load(open(json_filename, "r"))
+    bounds_and_ids = msr.msr_batch_from_directory(graph_dir, quiet=True)
 
-    for d_lo, d_hi, name in bounds_and_names:
+    for d_lo, d_hi, id in bounds_and_ids:
+        name = f"k{id}"
         assert d[name] == d_lo
         assert d[name] == d_hi

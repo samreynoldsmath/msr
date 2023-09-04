@@ -24,20 +24,20 @@ def main(n: int):
     graph_dir = f"../msr/graph/saved/n{n}/"
 
     # compute bounds on all graphs
-    bounds_and_names = msr.msr_batch_from_directory(path=graph_dir, quiet=QUIET)
+    bounds_and_ids = msr.msr_batch_from_directory(path=graph_dir, quiet=QUIET)
 
     # find troublemakers
     not_tight = 0
-    names = []
-    for b in bounds_and_names:
-        d_lo, d_hi, name = b
+    ids = []
+    for b in bounds_and_ids:
+        d_lo, d_hi, id = b
         if d_lo != d_hi:
             not_tight += 1
-            names.append(name)
-            print(f"{name}: {d_lo}, {d_hi}")
+            ids.append(id)
+            print(f"{id}: {d_lo}, {d_hi}")
 
     # number of graphs in test set
-    num_graphs = len(bounds_and_names)
+    num_graphs = len(bounds_and_ids)
 
     # final report
     if not_tight == 0:
@@ -50,11 +50,11 @@ def main(n: int):
 
     # save figures of troublemakers
     fig_dir = f"figs/n{n}/"
-    if SAVE_FIGS and len(names) > 0:
+    if SAVE_FIGS and len(ids) > 0:
         print("saving figures...")
-        for name in tqdm(names):
-            graph_file = graph_dir + name[2:] + ".json"
-            image_file = fig_dir + name + ".png"
+        for id in tqdm(ids):
+            graph_file = graph_dir + f"k{id}" + ".json"
+            image_file = fig_dir + f"k{id}" + ".png"
             msr.graph.draw_graph(
                 G=msr.graph.load_graph(graph_file),
                 embedding="min_entropy",

@@ -18,12 +18,6 @@ def load_graph(filename: str) -> graph:
     for i, j in data["edges"]:
         G.add_edge(i, j)
 
-    # add name
-    if "name" in data:
-        G.name = data["name"]
-    else:
-        G.name = filename.split("/")[-1].split(".")[0]
-
     return G
 
 
@@ -56,7 +50,6 @@ def save_graph(G: graph, filename: str) -> None:
         i, j = e.endpoints
         edges.append([i, j])
     data = {
-        "name": G.name,
         "num_verts": G.num_verts,
         "edges": edges,
     }

@@ -1,3 +1,8 @@
+## [2023 Sep 04] 0.7.0 Lookup
+- Added `msr/lookup.py` to manage known MSR bounds
+  - Graph bounds stored in `msr/soln' under a file name generated from the hash of a representative of its isomorphism class (min hash)
+- Modified `msr_bounds` to use lookup table when simple methods fail, and to add new bounds to the table after computing them
+
 ## [2023 Sep 03] 0.6.2 Signed SDP
 - Modified edges to be considered in signed-cyclic SDP to only include edges that are part of an *induced* even cycle
 - Added `induced_subgraph` method to `graph`

@@ -4,6 +4,7 @@ from enum import Enum
 from numpy import zeros
 
 from .graph import graph
+from .msr_lookup import load_msr_bounds, save_msr_bounds
 from .msr_sdp import (
     msr_sdp_signed_cycle_search,
     msr_sdp_signed_exhaustive,
@@ -43,10 +44,20 @@ STRATEGY: list[msr_strategy] = [
     msr_strategy.INDUCED_SUBGRAPH,
     msr_strategy.CLIQUE_UPPER,
     msr_strategy.BCD_LOWER,
-    msr_strategy.SDP_SIGNED_CYCLE,
     msr_strategy.EDGE_ADDITION,
-    msr_strategy.BCD_UPPER,
+    msr_strategy.SDP_SIGNED_CYCLE,
+    # msr_strategy.BCD_UPPER,
 ]
+
+
+# check that strategy is valid
+if (
+    msr_strategy.EDGE_ADDITION in STRATEGY
+    and msr_strategy.EDGE_REMOVAL in STRATEGY
+):
+    msg = "cannot use both edge addition and removal strategies"
+    logging.error(msg)
+    raise ValueError(msg)
 
 
 # log strategy
@@ -114,7 +125,7 @@ def dim_bounds(G: graph, max_depth: int, depth: int = 0) -> tuple[int, int]:
     """
 
     # log recursion depth
-    logging.info("RECURSION DEPTH: " + str(depth))
+    logging.info(f"RECURSION DEPTH: = {depth}, num_verts = {G.num_verts}")
     if depth > max_depth:
         msg = "recursion depth limit reached"
         logging.error(msg)
@@ -135,6 +146,13 @@ def dim_bounds(G: graph, max_depth: int, depth: int = 0) -> tuple[int, int]:
     if check_bounds(d_lo, d_hi, "reducing graph"):
         return d_lo, d_hi
 
+    # attempt to load bounds from file
+    d_lo_file, d_hi_file = load_msr_bounds(G)
+    d_lo = max(d_lo, d_lo_file)
+    d_hi = min(d_hi, d_hi_file)
+    if check_bounds(d_lo, d_hi, "loading bounds from file"):
+        return d_lo, d_hi
+
     # advanced strategies
     for strategy in STRATEGY:
         d_lo_strategy, d_hi_strategy = run_strategy(
@@ -143,10 +161,12 @@ def dim_bounds(G: graph, max_depth: int, depth: int = 0) -> tuple[int, int]:
         d_lo = max(d_lo, d_lo_strategy)
         d_hi = min(d_hi, d_hi_strategy)
         if check_bounds(d_lo, d_hi, strategy.value):
+            save_msr_bounds(G, d_lo, d_hi)
             return d_lo, d_hi
 
     # exit without tight bounds
     logging.debug("dim_bounds() exited without obtaining tight bounds")
+    save_msr_bounds(G, d_lo, d_hi)
     return d_lo, d_hi
 
 
@@ -236,13 +256,13 @@ def check_bounds(d_lo: int, d_hi: int, action_name: str) -> bool:
     """
     Checks that the bounds on dim(G) are tight.
     """
-    bounds_match = d_lo == d_hi
-    if bounds_match:
+    do_exit = d_lo >= d_hi
+    if d_lo == d_hi:
         logging.info("bounds match after " + action_name)
     if d_lo > d_hi:
         msg = "lower bound exceeds upper bound after " + action_name
         logging.warning(msg)
-    return bounds_match
+    return do_exit
 
 
 def get_bounds_on_components(
@@ -383,6 +403,10 @@ def bounds_from_edge_addition(
     """
     Computes bounds on dim(G) by adding edges.
     """
+
+    # NOTE: recursion depth maxes out if both edge removal and addition are
+    # both enabled
+
     logging.info("checking bounds from edge addition")
     d_lo_edges = 0
     d_hi_edges = G.num_verts
@@ -405,17 +429,11 @@ def bounds_from_edge_removal(
     G: graph, d_lo: int, d_hi: int, max_depth: int, depth: int
 ) -> tuple[int, int]:
     """
-    ! DEPRECATED
     Computes bounds on dim(G) by removing edges.
     """
 
-    # TODO: recursion depth maxes out if both edge removal and addition are
+    # NOTE: recursion depth maxes out if both edge removal and addition are
     # both enabled
-
-    # NOTE: edge removal doesn't seem to be much use anyway, probably because
-    # at this point most graphs will have a sharp lower bound, but removing an
-    # edge typically does not decrease the dimension, so the upper bounds is
-    # unlikely to be improved
 
     logging.info("checking bounds from edge removal")
     d_lo_edges = 0
@@ -566,7 +584,7 @@ def bcd_upper_bound(G: graph, d_lo: int, max_depth: int, depth: int) -> int:
     n = G.num_verts
 
     # TODO: this fails for n too large... why?
-    if n > 7:
+    if n > 10:
         return n
 
     d_hi_bcd = n
