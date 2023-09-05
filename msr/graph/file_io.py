@@ -3,6 +3,23 @@ import os
 
 from .graph import graph
 
+SAVED_GRAPH_DIR = os.path.dirname(__file__) + "/saved/"
+
+
+def files_in_directory(path: str, num_verts=0) -> list[str]:
+    """Returns all filenames in a directory."""
+    filenames = []
+    abspath = os.path.abspath(path)
+    directory = os.fsencode(abspath)
+    for file in os.listdir(directory):
+        filename = os.fsdecode(file)
+        if num_verts > 0 and not filename.startswith(f"n{num_verts}"):
+            continue
+        if filename.endswith(".graph"):
+            abs_filename = os.path.join(abspath, filename)
+            filenames.append(abs_filename)
+    return filenames
+
 
 def load_graph(filename: str) -> graph:
     """Load a graph from a json file."""
@@ -21,30 +38,22 @@ def load_graph(filename: str) -> graph:
     return G
 
 
-def files_in_directory(path: str) -> list[str]:
-    """Returns all filenames in a directory."""
-    filenames = []
-    abspath = os.path.abspath(path)
-    directory = os.fsencode(abspath)
-    for file in os.listdir(directory):
-        filename = os.fsdecode(file)
-        abs_filename = os.path.join(abspath, filename)
-        filenames.append(abs_filename)
-    return filenames
-
-
-def load_graphs_from_directory(path: str) -> list[graph]:
+def load_graphs_from_directory(
+    path: str = SAVED_GRAPH_DIR, num_verts=0
+) -> list[graph]:
     """Load all graphs from a directory."""
-    filenames = files_in_directory(path)
+    filenames = files_in_directory(path, num_verts)
     graphs = []
     for filename in filenames:
-        if filename.endswith(".json"):
+        if filename.endswith(".graph"):
             graphs.append(load_graph(filename))
     return graphs
 
 
-def save_graph(G: graph, filename: str) -> None:
+def save_graph(G: graph, filename: str = "") -> None:
     """Save a graph to a json file."""
+    if len(filename) == 0:
+        filename = SAVED_GRAPH_DIR + f"{G.id()}.graph"
     edges = []
     for e in G.edges:
         i, j = e.endpoints
@@ -54,6 +63,20 @@ def save_graph(G: graph, filename: str) -> None:
         "edges": edges,
     }
     _custom_json_dump(data, filename)
+
+
+def save_graphs(graphs: list[graph], path: str = SAVED_GRAPH_DIR) -> None:
+    """Saves graphs to disk."""
+
+    # create directory if none exists
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    # save graphs
+    print(f"Saving graphs to {path}")
+    for G in graphs:
+        filename = path + f"{G.id()}.graph"
+        save_graph(G, filename)
 
 
 def _custom_json_dump(data, filename, indent=4):

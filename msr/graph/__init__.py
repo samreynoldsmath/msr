@@ -1,5 +1,10 @@
 from .draw import draw_graph, draw_graphs
-from .file_io import load_graph, load_graphs_from_directory, save_graph
+from .file_io import (
+    SAVED_GRAPH_DIR,
+    load_graph,
+    load_graphs_from_directory,
+    save_graph,
+)
 from .generate import generate_and_save_all_graphs_on_n_vertices
 from .graph import graph
 from .graph_lib import (
@@ -17,11 +22,13 @@ from .graph_lib import (
 # essential
 __all__ = [
     "draw_graph",
+    "draw_graphs",
+    "generate_and_save_all_graphs_on_n_vertices",
+    "graph",
     "load_graph",
     "load_graphs_from_directory",
     "save_graph",
-    "generate_and_save_all_graphs_on_n_vertices",
-    "graph",
+    "SAVED_GRAPH_DIR",
 ]
 
 # graph_lib

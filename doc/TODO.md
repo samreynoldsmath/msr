@@ -21,7 +21,7 @@
 
 ## API
 - [ ] set strategy for `msr_bounds` at runtime
-- [ ] configure logging at runtime
+- [ ] configure logger at runtime
 
 ## Unit tests
 - [ ] Graph functionality

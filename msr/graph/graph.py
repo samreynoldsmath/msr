@@ -54,7 +54,7 @@ class graph:
         self.known_msr = None
 
     def __str__(self) -> str:
-        s = f"Vertex count: {self.num_verts}"
+        s = self.id()
         s += "\nNumber of edges: " + str(self.num_edges())
         s += "\nEdges:"
         for k, e in enumerate(self.edges):
@@ -72,25 +72,29 @@ class graph:
     def __hash__(self):
         n = self.num_verts
         n_choose_2 = n * (n - 1) // 2
-        binary = "0" * n_choose_2
+        binary_list = [0] * n_choose_2
         for i in range(n - 1):
             for j in range(i + 1, n):
                 if self.is_edge(i, j):
                     ij = j - 1 + (i * (2 * n - 3 - i)) // 2
-                    binary = binary[:ij] + "1" + binary[ij + 1 :]
-        return int(binary, 2)
+                    binary_list[ij] = 1
+        binary_str = "".join([str(b) for b in binary_list])
+        return int(binary_str, 2)
+
+    def id(self) -> str:
+        return f"n{self.num_verts}k{hash(self)}"
 
     ### CONSTRUCTION ##########################################################
 
-    def build_from_hash(self, hash: int) -> None:
+    def build_from_hash(self, id: int) -> None:
         """
         Builds the graph from its hash value.
         """
         n = self.num_verts
         n_choose_2 = n * (n - 1) // 2
-        if hash < 0 or hash >= 2**n_choose_2:
+        if id < 0 or id >= 2**n_choose_2:
             raise ValueError("Hash value out of bounds.")
-        binary = bin(hash)[2:].zfill(n_choose_2)
+        binary = bin(id)[2:].zfill(n_choose_2)
         self.edges = set()
         for i in range(n - 1):
             for j in range(i + 1, n):

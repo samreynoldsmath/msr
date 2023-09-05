@@ -1,9 +1,9 @@
-import logging
+from logging import Logger
 
 from .graph.graph import graph
 
 
-def reduce(G: graph) -> tuple[graph, int, int]:
+def reduce(G: graph, logger: Logger) -> tuple[graph, int, int]:
     """
     Attempts to reduce the number of vertices in the graph by
     * removing pendants
@@ -21,10 +21,10 @@ def reduce(G: graph) -> tuple[graph, int, int]:
 
     if not G.is_connected():
         msg = "reduction loop assumes G is connected"
-        logging.error(msg)
+        logger.error(msg)
         raise Exception(msg)
 
-    logging.info("performing reduction")
+    logger.info("performing reduction")
 
     updated = True  # track whether any updates were made in the last iteration
     d_diff = 0  # track change in dimension
@@ -33,69 +33,71 @@ def reduce(G: graph) -> tuple[graph, int, int]:
     # main reduction loop: continue until no updates are made
     while updated:
         # check if time to exit
-        if check_stopping_criteria(G):
-            reduction_report(deletions, d_diff, updated)
+        if check_stopping_criteria(G, logger):
+            reduction_report(deletions, d_diff, updated, logger)
             return G, d_diff, deletions
 
         # remove pendants
         # NOTE: this is a cheap operation
         # NOTE: deleting a pendant reduces dimension by 1
-        G, updated, local_deletions = remove_pendants(G)
+        G, updated, local_deletions = remove_pendants(G, logger)
         deletions += local_deletions
         d_diff += local_deletions
 
         # check if time to exit
-        if check_stopping_criteria(G):
-            reduction_report(deletions, d_diff, updated)
+        if check_stopping_criteria(G, logger):
+            reduction_report(deletions, d_diff, updated, logger)
             return G, d_diff, deletions
 
         # remove subdivisions
         # NOTE: contracting an edge reduces dimension by 1
         if not updated:
-            G, updated, local_deletions = remove_subdivisions(G)
+            G, updated, local_deletions = remove_subdivisions(G, logger)
             deletions += local_deletions
             d_diff += local_deletions
 
         # check if time to exit
-        if check_stopping_criteria(G):
-            reduction_report(deletions, d_diff, updated)
+        if check_stopping_criteria(G, logger):
+            reduction_report(deletions, d_diff, updated, logger)
             return G, d_diff, deletions
 
         # remove redundant vertices
         # NOTE: dimension does not change
         # NOTE: requires connectivity check
         if not updated:
-            G, updated, local_deletions = remove_redundant_verts(G)
+            G, updated, local_deletions = remove_redundant_verts(G, logger)
             deletions += local_deletions
 
         # check if time to exit
-        if check_stopping_criteria(G):
-            reduction_report(deletions, d_diff, updated)
+        if check_stopping_criteria(G, logger):
+            reduction_report(deletions, d_diff, updated, logger)
             return G, d_diff, deletions
 
         # remove duplicate pairs
         # NOTE: dimension does not change
         # NOTE: quadratic cost in number of vertices
         if not updated:
-            G, updated, local_deletions = remove_duplicate_pairs(G)
+            G, updated, local_deletions = remove_duplicate_pairs(G, logger)
             deletions += local_deletions
 
     # report on the reduction and return
-    reduction_report(deletions, d_diff, updated)
+    reduction_report(deletions, d_diff, updated, logger)
     return G, d_diff, deletions
 
 
-def reduction_report(deletions: int, d_diff: int, updated: bool) -> None:
+def reduction_report(
+    deletions: int, d_diff: int, updated: bool, logger: Logger
+) -> None:
     if not updated:
-        logging.debug("reduction stagnated")
+        logger.debug("reduction stagnated")
     v = "vertices" if deletions != 1 else "vertex"
-    logging.info(
+    logger.info(
         f"reduction removed {deletions} {v}"
         + f", reduced dimension by {d_diff}"
     )
 
 
-def check_stopping_criteria(G: graph) -> bool:
+def check_stopping_criteria(G: graph, logger: Logger) -> bool:
     """
     reduction completes if G is
     * has less than 3 vertices
@@ -106,24 +108,22 @@ def check_stopping_criteria(G: graph) -> bool:
     """
     stop = not G.is_connected()
     if stop:
-        logging.debug("reduction stopped because graph is disconnected")
+        logger.debug("reduction stopped because graph is disconnected")
     if not stop:
         stop = G.num_verts < 3 or G.is_complete() or G.is_a_tree()
     if not stop:
         # more expensive check
         stop = G.is_a_cycle()
     if stop:
-        logging.debug("reduction succeeded")
+        logger.debug("reduction succeeded")
     return stop
 
 
-def remove_pendants(
-    G: graph,
-) -> tuple[graph, bool, int]:
+def remove_pendants(G: graph, logger: Logger) -> tuple[graph, bool, int]:
     """
     Removes all pendant vertices.
     """
-    logging.debug("removing pendants")
+    logger.debug("removing pendants")
     updated = False
     local_deletions = 0
     i = G.num_verts
@@ -135,17 +135,15 @@ def remove_pendants(
             local_deletions += 1
     if local_deletions > 0:
         v = "pendants" if local_deletions != 1 else "pendant"
-        logging.debug(f"removed {local_deletions} {v}")
+        logger.debug(f"removed {local_deletions} {v}")
     return G, updated, local_deletions
 
 
-def remove_subdivisions(
-    G: graph,
-) -> tuple[graph, bool, int]:
+def remove_subdivisions(G: graph, logger: Logger) -> tuple[graph, bool, int]:
     """
     Removes all subdivisions.
     """
-    logging.debug("removing subdivisions")
+    logger.debug("removing subdivisions")
     updated = False
     local_deletions = 0
     i = G.num_verts
@@ -159,19 +157,17 @@ def remove_subdivisions(
             local_deletions += 1
     if local_deletions > 0:
         plural = "s" if local_deletions != 1 else ""
-        logging.debug(f"removed {local_deletions} subdivision {plural}")
+        logger.debug(f"removed {local_deletions} subdivision {plural}")
     return G, updated, local_deletions
 
 
-def remove_redundant_verts(
-    G: graph,
-) -> tuple[graph, bool, int]:
+def remove_redundant_verts(G: graph, logger: Logger) -> tuple[graph, bool, int]:
     """
     Removes all vertices adjacent to every other vertex.
 
     If the graph becomes disconnected, the reduction is halted.
     """
-    logging.debug("removing redundant vertices")
+    logger.debug("removing redundant vertices")
     updated = False
     local_deletions = 0
     i = G.num_verts
@@ -184,21 +180,19 @@ def remove_redundant_verts(
             # if G has become disconnected, stop reducing
             if not G.is_connected():
                 v = "vertices" if local_deletions != 1 else "vertex"
-                logging.debug(f"removed {local_deletions} redundant {v}")
+                logger.debug(f"removed {local_deletions} redundant {v}")
                 return G, updated, local_deletions
     if local_deletions > 0:
         v = "vertices" if local_deletions != 1 else "vertex"
-        logging.debug(f"removed {local_deletions} redundant {v}")
+        logger.debug(f"removed {local_deletions} redundant {v}")
     return G, updated, local_deletions
 
 
-def remove_duplicate_pairs(
-    G: graph,
-) -> tuple[graph, bool, int]:
+def remove_duplicate_pairs(G: graph, logger: Logger) -> tuple[graph, bool, int]:
     """
     Removes all pairs of adjacent vertices with the same neighbors.
     """
-    logging.debug("removing duplicate pairs")
+    logger.debug("removing duplicate pairs")
     updated = False
     deletions = 0
     i = G.num_verts
@@ -214,5 +208,5 @@ def remove_duplicate_pairs(
                 deletions += 1
     if deletions > 0:
         v = "vertices" if deletions != 1 else "vertex"
-        logging.debug(f"removed {deletions} duplicate {v}")
+        logger.debug(f"removed {deletions} duplicate {v}")
     return G, updated, deletions

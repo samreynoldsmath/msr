@@ -1,3 +1,15 @@
+## [2023 Sep 04] 0.7.1 Lookup
+- Moved logger to `msr/log_config.py`
+  - Logger object passed to functions as needed
+- `file_io` tweaks
+  - Added default save directory for graphs with `SAVED_GRAPH_DIR=msr/graph/saved`
+  - Graphs files now use `.graph` filenames
+  - Graphs are saved by default to `SAVED_GRAPH_DIR` with filename `n{num_vertices}k{hash}.graph`
+- Updated `msr_batch` to use `SAVED_GRAPH_DIR` by default
+- Added subdirectories to `msr/soln` to store graphs by number of vertices and number of edges to reduce search time
+- Removed redundant functions from `generate` module
+- Added test for graph hashing
+
 ## [2023 Sep 04] 0.7.0 Lookup
 - Added `msr/lookup.py` to manage known MSR bounds
   - Graph bounds stored in `msr/soln' under a file name generated from the hash of a representative of its isomorphism class (min hash)
@@ -6,7 +18,7 @@
 ## [2023 Sep 03] 0.6.2 Signed SDP
 - Modified edges to be considered in signed-cyclic SDP to only include edges that are part of an *induced* even cycle
 - Added `induced_subgraph` method to `graph`
-- Logging tweaks
+- logger tweaks
 
 ## [2023 Sep 02] 0.6.1 Signed SDP
 - SDP tweaks
@@ -21,7 +33,7 @@
 - Introduced signed SDP relaxation
   - Simple version flips exactly one edge sign at a time
   - Full version flips all possible edge signs at a time
-  - Added logging
+  - Added logger
   - `msr_bounds` should now be able to find tight bounds for any graph (but not necessarily in a reasonable amount of time)
 - Restructured `msr_bounds`
   - Added a strategy manager
@@ -81,5 +93,5 @@
   - Finds lower bound by checking subgraphs
   - Finds upper bound with an SDP approach
   - Finds bounds via edge addition
-- Added logging and removed most print statements
+- Added logger and removed most print statements
 - Added benchmark to see how well the algorithm works on all six-vertex graphs

@@ -9,7 +9,7 @@ import msr
 
 
 def main(n: int):
-    path = f"../msr/graph/saved/n{n}"
+    path = msr.graph.SAVED_GRAPH_DIR + f"n{n}"
     msr.graph.generate_and_save_all_graphs_on_n_vertices(n, path)
 
 
