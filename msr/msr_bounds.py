@@ -1,5 +1,4 @@
 import logging
-from enum import Enum
 
 from numpy import zeros
 
@@ -13,48 +12,27 @@ from .msr_sdp import (
     msr_sdp_upper_bound,
 )
 from .reduce import reduce
+from .strategy_config import STRATEGY, check_strategy, msr_strategy
 
 
-# Enumeration of strategies for computing bounds on msr(G)
-class msr_strategy(Enum):
-    BCD_LOWER = "bcd-lower"
-    BCD_UPPER = "bcd-upper"
-    CUT_VERT = "cut-vert"
-    CLIQUE_UPPER = "clique-upper"
-    EDGE_ADDITION = "edge-add"
-    EDGE_REMOVAL = "edge-rem"
-    INDUCED_SUBGRAPH = "ind-subgraph"
-    SDP_UPPER = "sdp-upper"
-    SDP_SIGNED_EXHAUSTIVE = "sdp-signed-exhaustive"
-    SDP_SIGNED_SIMPLE = "sdp-signed-simple"
-    SDP_SIGNED_CYCLE = "sdp-signed-cycle"
-
-
-# configure strategy
-STRATEGY: list[msr_strategy] = [
-    msr_strategy.CUT_VERT,
-    msr_strategy.INDUCED_SUBGRAPH,
-    msr_strategy.CLIQUE_UPPER,
-    msr_strategy.BCD_LOWER,
-    msr_strategy.EDGE_ADDITION,
-    msr_strategy.SDP_SIGNED_CYCLE,
-    msr_strategy.BCD_UPPER,
-]
-
-
-def msr_bounds(G: graph) -> tuple[int, int]:
+def msr_bounds(
+    G: graph,
+    load_flag: bool = True,
+    save_flag: bool = True,
+) -> tuple[int, int]:
     """
     Returns bounds on msr(G) using a recursive algorithm.
     """
 
     # configure logging
     logger = configure_logging(
-        filename = G.id() + ".log",
-        level = logging.INFO,
+        filename=G.id() + ".log",
+        level=logging.WARNING,
+        # level=logging.INFO,
     )
 
     # log input
-    logger.info("computing bounds on msr(G) with G =\n" + str(G))
+    logger.info("computing bounds on msr(G) with G = " + str(G))
 
     # log strategy
     msg = "Using strategy: "
@@ -62,14 +40,8 @@ def msr_bounds(G: graph) -> tuple[int, int]:
         msg += "\n%2d.\t" % k + strategy.value
     logger.info(msg)
 
-    # check that strategy is valid
-    if (
-        msr_strategy.EDGE_ADDITION in STRATEGY
-        and msr_strategy.EDGE_REMOVAL in STRATEGY
-    ):
-        msg = "cannot use both edge addition and removal strategies"
-        logger.error(msg)
-        raise ValueError(msg)
+    # check strategy
+    check_strategy(logger)
 
     # check that G is nontrivial
     if G.num_verts < 1:
@@ -87,7 +59,14 @@ def msr_bounds(G: graph) -> tuple[int, int]:
     max_depth = 10 * G.num_verts
 
     # find bounds on dim(G)
-    d_lo, d_hi = dim_bounds(G, max_depth, depth=0, logger=logger)
+    d_lo, d_hi = dim_bounds(
+        G,
+        max_depth,
+        depth=0,
+        logger=logger,
+        load_flag=load_flag,
+        save_flag=save_flag,
+    )
 
     # mod out isolated vertices
     d_lo -= num_isolated_verts
@@ -101,7 +80,12 @@ def msr_bounds(G: graph) -> tuple[int, int]:
 
 
 def dim_bounds(
-    G: graph, max_depth: int, depth: int, logger: logging.Logger
+    G: graph,
+    max_depth: int,
+    depth: int,
+    logger: logging.Logger,
+    load_flag=True,
+    save_flag=True,
 ) -> tuple[int, int]:
     """
     Returns bounds dim(G), where G is a simple undirected graph, and
@@ -111,48 +95,59 @@ def dim_bounds(
     """
 
     # log recursion depth
-    logger.info(f"RECURSION DEPTH: = {depth}, num_verts = {G.num_verts}")
+    logger.info(f"DEPTH({depth}), num_verts = {G.num_verts}")
     if depth > max_depth:
-        msg = "recursion depth limit reached"
-        logger.error(msg)
-        raise RecursionError(msg)
+        msg = "recursion depth limit reached, returning loose bounds"
+        logger.warning(msg)
+        return 0, G.num_verts
 
     # avoid corrupting G
     G = G.__copy__()
 
     # find bounds on dim(G) using simple methods
-    d_lo, d_hi, do_exit = dim_bounds_simple(G, max_depth, depth, logger)
-    if do_exit:
+    d_lo, d_hi, exit_flag = dim_bounds_simple(G, max_depth, depth, logger)
+    if exit_flag:
+        logger.info(f"EXIT({depth}): simple methods triggered exit")
+        return d_lo, d_hi
+    if check_bounds(d_lo, d_hi, "simple methods", logger, depth):
         return d_lo, d_hi
 
     # reduce the graph and obtain bounds on the reduced graph
-    G, d_lo, d_hi = reduce_and_bound_reduction(G, max_depth, depth, logger)
-
-    # check if bounds are tight
-    if check_bounds(d_lo, d_hi, "reducing graph", logger):
+    G, d_lo, d_hi, exit_flag = reduce_and_bound_reduction(
+        G, max_depth, depth, logger
+    )
+    if exit_flag:
+        logger.info(f"EXIT({depth}): reduction triggered exit")
+        return d_lo, d_hi
+    if check_bounds(d_lo, d_hi, "reducing graph", logger, depth):
         return d_lo, d_hi
 
     # attempt to load bounds from file
-    d_lo_file, d_hi_file = load_msr_bounds(G, logger)
-    d_lo = max(d_lo, d_lo_file)
-    d_hi = min(d_hi, d_hi_file)
-    if check_bounds(d_lo, d_hi, "loading bounds from file", logger):
-        return d_lo, d_hi
+    if load_flag:
+        d_lo_file, d_hi_file = load_msr_bounds(G, logger)
+        d_lo = max(d_lo, d_lo_file)
+        d_hi = min(d_hi, d_hi_file)
+        if check_bounds(d_lo, d_hi, "loading bounds from file", logger, depth):
+            return d_lo, d_hi
 
     # advanced strategies
     for strategy in STRATEGY:
-        d_lo_strategy, d_hi_strategy = run_strategy(
+        d_lo_new, d_hi_new = run_strategy(
             strategy.value, G, d_lo, d_hi, max_depth, depth, logger
         )
-        d_lo = max(d_lo, d_lo_strategy)
-        d_hi = min(d_hi, d_hi_strategy)
-        if check_bounds(d_lo, d_hi, strategy.value, logger):
-            save_msr_bounds(G, d_lo, d_hi, logger)
+        d_lo = max(d_lo, d_lo_new)
+        d_hi = min(d_hi, d_hi_new)
+        if check_bounds(d_lo, d_hi, strategy.value, logger, depth):
+            if save_flag and d_lo >= d_lo_file and d_hi <= d_hi_file:
+                save_msr_bounds(G, d_lo, d_hi, logger)
             return d_lo, d_hi
 
     # exit without tight bounds
-    logger.debug("dim_bounds() exited without obtaining tight bounds")
-    save_msr_bounds(G, d_lo, d_hi, logger)
+    logger.info(
+        f"EXIT({depth}): dim_bounds() exited without obtaining tight bounds"
+    )
+    if save_flag and d_lo >= d_lo_file and d_hi <= d_hi_file:
+        save_msr_bounds(G, d_lo, d_hi, logger)
     return d_lo, d_hi
 
 
@@ -170,10 +165,10 @@ def dim_bounds_simple(
 
     # special cases of empty and complete graphs
     if G.is_empty():
-        logger.info(f"G is empty on {n} vertices")
+        logger.info(f"EXIT({depth}): G is empty on {n} vertices")
         return n, n, True
     if G.is_complete():
-        logger.info(f"G is complete on {n} vertices")
+        logger.info(f"EXIT({depth}): G is complete on {n} vertices")
         return 1, 1, True
 
     # find bounds by summing bounds on components
@@ -185,10 +180,10 @@ def dim_bounds_simple(
 
     # special cases of trees and cycles
     if G.is_a_tree():
-        logger.info(f"G is a tree on {n} vertices")
+        logger.info(f"EXIT({depth}): G is a tree on {n} vertices")
         return n - 1, n - 1, True
     if G.is_a_cycle():
-        logger.info(f"G is a cycle on {n} vertices")
+        logger.info(f"EXIT({depth}): G is a cycle on {n} vertices")
         return n - 2, n - 2, True
 
     # simple strategies failed
@@ -244,18 +239,21 @@ def run_strategy(
 
 
 def check_bounds(
-    d_lo: int, d_hi: int, action_name: str, logger: logging.Logger
+    d_lo: int, d_hi: int, action_name: str, logger: logging.Logger, depth: int
 ) -> bool:
     """
     Checks that the bounds on dim(G) are tight.
     """
-    do_exit = d_lo >= d_hi
+    exit_flag = d_lo >= d_hi
     if d_lo == d_hi:
-        logger.info("bounds match after " + action_name)
+        logger.info(f"EXIT({depth}): bounds match after " + action_name)
     if d_lo > d_hi:
-        msg = "lower bound exceeds upper bound after " + action_name
+        msg = (
+            f"EXIT({depth}): lower bound exceeds upper bound after "
+            + action_name
+        )
         logger.warning(msg)
-    return do_exit
+    return exit_flag
 
 
 def get_bounds_on_components(
@@ -290,33 +288,37 @@ def get_bounds_on_components(
 
 def reduce_and_bound_reduction(
     G: graph, max_depth: int, depth: int, logger: logging.Logger
-) -> tuple[graph, int, int]:
+) -> tuple[graph, int, int, bool]:
     """
     Performs the reduction G |-> H and returns H and bounds on dim(H).
+
+    If the reduction is trivial (i.e. no vertices removed), we return the
+    original graph and bound dim(G) with (2, n - 2).
+
+    If the reduction is nontrivial, we get bounds on the reduced graph using
+    simple methods. (This includes using advanced methods on the components of
+    the reduced graph, if it is disconnected.) If this fails to get tight
+    bounds, we will attempt advanced strategies after returning to dim_bounds().
     """
+
+    # reduce the graph
     G, d_diff, deletions = reduce(G, logger)
 
-    # if G was disconnected by the reduction, return bounds for each component
-    if not G.is_connected():
-        d_lo, d_hi, _ = dim_bounds_simple(G, max_depth, depth, logger)
+    # get bounds on the reduced graph
+    if deletions == 0:
+        return G, 2, G.num_verts - 2, False
+    elif deletions > 0:
+        logger.info("checking bounds of reduced graph")
+        d_lo, d_hi, exit_flag = dim_bounds_simple(
+            G, max_depth, depth + 1, logger
+        )
         d_lo += d_diff
         d_hi += d_diff
-        return G, d_lo, d_hi
-
-    # if reduction was nontrivial and G is still connected,
-    # compute bounds on the reduced graph
-    if deletions > 0:
-        logger.debug("checking bounds of reduced graph")
-        d_lo, d_hi = dim_bounds(G, max_depth, depth + 1, logger)
-        d_lo += d_diff
-        d_hi += d_diff
-        return G, d_lo, d_hi
-
-    # otherwise, we are dealing with a connected pre-reduced connected graph
-    # TODO: prove that G connected and dim(G) = n - 1 implies G is a tree
-    d_lo = 2  # G is not complete
-    d_hi = G.num_verts - 2  # G is not a tree and has at least 4 vertices
-    return G, d_lo, d_hi
+        return G, d_lo, d_hi, exit_flag
+    else:
+        msg = f"reduction failed: deletions = {deletions} < 0"
+        logger.error(msg)
+        raise ValueError(msg)
 
 
 def lower_bound_induced_subgraphs(
@@ -330,10 +332,11 @@ def lower_bound_induced_subgraphs(
     """
     Returns the maximum lower bound of the dimension of any induced subgraph.
     """
+    logger.info("checking induced subgraphs")
     d_lo = 0
     n = G.num_verts
     for i in range(n):
-        logger.debug(f"checking induced subgraph {i}")
+        logger.debug(f"induced subgraph {i}")
         H = G.__copy__()
         H.remove_vert(i)
         d_lo_H = dim_bounds(H, max_depth, depth + 1, logger)[0]
@@ -352,16 +355,18 @@ def bounds_from_cut_vert_induced_cover(
     holds that dim(G) = dim(G_1) + dim(G_2).
     """
 
+    logger.info("checking bounds from cut vertex")
+
     # find a cut vertex and associated induced cover of G
     cover = G.get_induced_cover_from_cut_vert()
 
     # determine if G has a cut vertex, if so return its index
     if len(cover) < 2:
-        logger.debug("no cut vertices found")
+        logger.info("no cut vertices found")
         return 0, G.num_verts
 
     # in the event that a cut vertex is found
-    logger.debug(f"cut vertex found, induced cover with size {len(cover)}")
+    logger.info(f"cut vertex found, induced cover with size {len(cover)}")
 
     # determine dim(G_i) for each G_i in the cover, sum bounds
     d_lo_cover = 0
@@ -382,6 +387,7 @@ def upper_bound_from_cliques(
     consisting of i and its neighborhood and H is the induced subgraph G - i.
     Assumes that G is connected and has already undergone reduction.
     """
+    logger.info("checking bounds from cliques")
     d_hi_cliques = G.num_verts
     for i in range(G.num_verts):
         N = G.vert_neighbors(i)
@@ -411,6 +417,16 @@ def bounds_from_edge_addition(
     # both enabled
 
     logger.info("checking bounds from edge addition")
+
+    # avoid corrupting G
+    G = G.__copy__()
+
+    # sort vertices in descending order by degree
+    perm = list(range(G.num_verts))
+    perm.sort(key=lambda i: G.vert_deg(i), reverse=True)
+    G.permute_verts(perm)
+
+    # add edges
     d_lo_edges = 0
     d_hi_edges = G.num_verts
     for i in range(G.num_verts):
@@ -444,6 +460,16 @@ def bounds_from_edge_removal(
     # both enabled
 
     logger.info("checking bounds from edge removal")
+
+    # avoid corrupting G
+    G = G.__copy__()
+
+    # sort vertices in ascending order by degree
+    perm = list(range(G.num_verts))
+    perm.sort(key=lambda i: G.vert_deg(i))
+    G.permute_verts(perm)
+
+    # remove edges
     d_lo_edges = 0
     d_hi_edges = G.num_verts
     for e in G.edges:
@@ -488,6 +514,7 @@ def bcd_bounds(
 
     # if dim(G) - |R| <= 1, then dim(G) = |R| + xi
     if d_hi - m <= 1:
+        logger.debug("d_hi - m <= 1, tight bounds found")
         d_hi = d_lo
 
     return d_lo, d_hi
@@ -512,7 +539,7 @@ def _correction_number_lower_bound(
 
     # if G is empty, stop (but this should never happen)
     if b < 1:
-        logger.debug("G is empty")
+        logger.warning("correction number aborted, G is empty")
         return 0
 
     # sort R in descending order to avoid index issues
@@ -566,17 +593,19 @@ def _correction_number_lower_bound(
         num_isolated_verts = H_C.num_isolated_verts()
         d_lo_H_C = dim_bounds(H_C, max_depth, depth + 1, logger)[0]
         xi = d_lo_H_C - num_isolated_verts
+        logger.info(f"correction number is {xi}")
         return xi
 
     # enumerate all correction graphs and compute correction number
     num_correction_graphs = 2**num_opt_edges
     # TODO: check that is not too large?
-    logger.debug(
+    logger.info(
         f"computing bounds for {num_correction_graphs} correction graphs"
     )
     xi = d_hi - m
     opt_edges = list(H_CO.edges)
     for k in range(num_correction_graphs):
+        logger.debug(f"computing correction graph {k}")
         H_Ck = H_C.__copy__()
         binary = bin(k)[2:].zfill(num_opt_edges)
         for ij in range(num_opt_edges):
@@ -588,11 +617,17 @@ def _correction_number_lower_bound(
         if xi == 0:
             break
 
+    logger.info(f"correction number is {xi}")
     return xi
 
 
 def bcd_upper_bound(
-    G: graph, d_lo: int, max_depth: int, depth: int, logger: logging.Logger
+    G: graph,
+    d_lo: int,
+    max_depth: int,
+    depth: int,
+    logger: logging.Logger,
+    n_max: int = 6,
 ) -> int:
     """
     !!! UNSTABLE
@@ -604,8 +639,12 @@ def bcd_upper_bound(
     n = G.num_verts
 
     # TODO: this fails for n too large... why?
-    if n > 10:
+    if n > n_max:
+        logger.debug(f"n > {n_max}, returning n")
         return n
+
+    if n_max > 6:
+        logger.warning("n_max > 6, may be unstable")
 
     d_hi_bcd = n
     for i in range(G.num_verts):

@@ -73,7 +73,6 @@ def save_graphs(graphs: list[graph], path: str = SAVED_GRAPH_DIR) -> None:
         os.makedirs(path)
 
     # save graphs
-    print(f"Saving graphs to {path}")
     for G in graphs:
         filename = path + f"{G.id()}.graph"
         save_graph(G, filename)

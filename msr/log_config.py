@@ -1,7 +1,7 @@
 import logging
 import os
 
-LOG_DIR = os.path.dirname(os.path.abspath(__file__)) + "/../log/"
+LOG_DIR = os.path.dirname(os.path.abspath(__file__)) + "/log/"
 
 
 def configure_logging(

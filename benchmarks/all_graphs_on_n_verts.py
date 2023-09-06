@@ -51,7 +51,7 @@ def main(n: int):
         print("saving figures...")
         for id in tqdm(ids):
             graph_file = msr.graph.SAVED_GRAPH_DIR + f"{id}.graph"
-            image_file = FIG_DIR + f"k{id}.png"
+            image_file = FIG_DIR + f"{id}.png"
             msr.graph.draw_graph(
                 G=msr.graph.load_graph(graph_file),
                 embedding="min_entropy",

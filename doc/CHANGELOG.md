@@ -1,3 +1,12 @@
+## [2023 Sep 06] 0.7.2 Lookup
+- `sdp_signed_simple` now performs an unsigned SDP before switching signs
+- Simplified logic of bounding reduced graphs
+- Moved strategy configuration to `msr/strategy_config.py`
+- Modified `bounds_from_edge_addition` to prioritize vertices with high degree
+- Modified `bounds_from_edge_removal` to prioritize vertices with low degree
+- Restructured tests to make it obvious for which graph the test failed
+- Logger tweaks
+
 ## [2023 Sep 04] 0.7.1 Lookup
 - Moved logger to `msr/log_config.py`
   - Logger object passed to functions as needed

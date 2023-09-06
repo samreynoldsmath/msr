@@ -125,6 +125,10 @@ def msr_sdp_signed_simple(G: graph, d_lo: int, logger: Logger, tol=1e-4) -> int:
     Flips sign of each edge in turn to find the minimum rank of a positive
     semidefinite generalized adjacency matrix.
     """
+    d_hi = msr_sdp_upper_bound(G, logger, tol)
+    if d_hi <= d_lo:
+        logger.info("simple search succeeded")
+        return d_hi
     logger.info("beginning simple search with SDP relaxation")
     n = G.num_verts
     d_hi = n
@@ -137,7 +141,7 @@ def msr_sdp_signed_simple(G: graph, d_lo: int, logger: Logger, tol=1e-4) -> int:
         logger.debug(f"SDP signed simple {k} /  {num_edges}")
         d = msr_sdp_signed(edge_signs, tol)
         if d <= d_lo:
-            logger.info(f"simple search succeeded")
+            logger.info(f"simple search succeeded with flip {k}")
             return d
         d_hi = min(d_hi, d)
         edge_signs[i, j] = +1
@@ -179,7 +183,7 @@ def msr_sdp_signed_cycle_search(
         d = msr_sdp_signed(edge_signs, tol)
         d_hi = min(d_hi, d)
         if d_hi <= d_lo:
-            logger.info(f"signed cycle search succeeded")
+            logger.info(f"signed cycle search succeeded with flip {k}")
             return d_hi
     logger.info(f"signed cycle search exited without tight bound")
     return d_hi
@@ -231,7 +235,7 @@ def msr_sdp_signed_exhaustive(
         d = msr_sdp_signed(edge_signs, tol)
         d_hi = min(d_hi, d)
         if d_hi <= d_lo:
-            logger.info(f"exhaustive search succeeded")
+            logger.info(f"exhaustive search succeeded with flip {k}")
             return d_hi
     logger.warning(f"exhaustive search failed")
     return d_hi
