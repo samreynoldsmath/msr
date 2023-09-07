@@ -1,10 +1,11 @@
-from enum import Enum
 import logging
+from enum import Enum
 
 
 # Enumeration of strategies for computing bounds on msr(G)
 class msr_strategy(Enum):
     BCD_LOWER = "bcd-lower"
+    BCD_LOWER_EXHAUSTIVE = "bcd-lower-exhaustive"
     BCD_UPPER = "bcd-upper"
     CUT_VERT = "cut-vert"
     CLIQUE_UPPER = "clique-upper"
@@ -22,7 +23,7 @@ STRATEGY: list[msr_strategy] = [
     msr_strategy.CUT_VERT,
     msr_strategy.INDUCED_SUBGRAPH,
     msr_strategy.CLIQUE_UPPER,
-    msr_strategy.BCD_LOWER,
+    msr_strategy.BCD_LOWER_EXHAUSTIVE,
     msr_strategy.EDGE_ADDITION,
     msr_strategy.SDP_SIGNED_CYCLE,
 ]

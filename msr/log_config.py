@@ -1,11 +1,13 @@
 import logging
 import os
 
-LOG_DIR = os.path.dirname(os.path.abspath(__file__)) + "/log/"
+LOG_PATH = os.path.dirname(os.path.abspath(__file__)) + "/log/"
 
 
 def configure_logging(
-    filename: str = "temp.log", level: int = logging.ERROR
+    log_path: str = LOG_PATH,
+    filename: str = "temp.log",
+    level: int = logging.ERROR,
 ) -> logging.Logger:
     logger = logging.getLogger(filename)
     logger.setLevel(level)
@@ -18,9 +20,9 @@ def configure_logging(
         logger.addHandler(sh)
         return logger
     else:
-        if not os.path.exists(LOG_DIR):
-            os.makedirs(LOG_DIR)
-        fh = logging.FileHandler(LOG_DIR + filename, mode="w")
+        if not os.path.exists(log_path):
+            os.makedirs(log_path)
+        fh = logging.FileHandler(log_path + filename, mode="w")
         fh.setFormatter(fh_formatter)
         logger.addHandler(fh)
         return logger

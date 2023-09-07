@@ -1,3 +1,8 @@
+## [2023 Sep 07] 0.8.0 Exhaustive BCD
+- Introduced exhaustive BCD
+  - `bcd_exhaustive` computes a lower bound on MSR by considering all possible independent sets
+  - Added `independent_sets` method to `graph` that returns a list of all independent sets
+
 ## [2023 Sep 06] 0.7.2 Lookup
 - `sdp_signed_simple` now performs an unsigned SDP before switching signs
 - Simplified logic of bounding reduced graphs

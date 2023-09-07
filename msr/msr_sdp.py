@@ -237,5 +237,5 @@ def msr_sdp_signed_exhaustive(
         if d_hi <= d_lo:
             logger.info(f"exhaustive search succeeded with flip {k}")
             return d_hi
-    logger.warning(f"exhaustive search failed")
+    logger.info(f"exhaustive search failed")
     return d_hi

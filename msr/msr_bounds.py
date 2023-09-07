@@ -3,7 +3,7 @@ import logging
 from numpy import zeros
 
 from .graph import graph
-from .log_config import configure_logging
+from .log_config import LOG_PATH, configure_logging
 from .msr_lookup import load_msr_bounds, save_msr_bounds
 from .msr_sdp import (
     msr_sdp_signed_cycle_search,
@@ -17,6 +17,9 @@ from .strategy_config import STRATEGY, check_strategy, msr_strategy
 
 def msr_bounds(
     G: graph,
+    log_path: str = LOG_PATH,
+    log_level: int = logging.ERROR,
+    log_print: bool = False,
     load_flag: bool = True,
     save_flag: bool = True,
 ) -> tuple[int, int]:
@@ -25,10 +28,14 @@ def msr_bounds(
     """
 
     # configure logging
+    if log_print:
+        filename = ""
+    else:
+        filename = G.id() + ".log"
     logger = configure_logging(
-        filename=G.id() + ".log",
-        level=logging.WARNING,
-        # level=logging.INFO,
+        log_path=log_path,
+        filename=filename,
+        level=log_level,
     )
 
     # log input
@@ -152,7 +159,10 @@ def dim_bounds(
 
 
 def dim_bounds_simple(
-    G: graph, max_depth: int, depth: int, logger: logging.Logger
+    G: graph,
+    max_depth: int,
+    depth: int,
+    logger: logging.Logger,
 ) -> tuple[int, int, bool]:
     """
     Gets bounds on dim(G) by counting edges, degrees, and checking connectivity.
@@ -200,38 +210,103 @@ def run_strategy(
     logger: logging.Logger,
 ) -> tuple[int, int]:
     """Runs a strategy for computing bounds on dim(G)."""
+    if strategy_name == msr_strategy.BCD_LOWER_EXHAUSTIVE.value:
+        return bcd_bounds_exhaustive(
+            G,
+            d_lo,
+            d_hi,
+            max_depth,
+            depth,
+            logger,
+        )
     if strategy_name == msr_strategy.BCD_LOWER.value:
-        return bcd_bounds(G, d_lo, d_hi, max_depth, depth, logger)
+        return bcd_bounds(
+            G,
+            d_lo,
+            d_hi,
+            max_depth,
+            depth,
+            logger,
+        )
     if strategy_name == msr_strategy.BCD_UPPER.value:
-        d_hi = bcd_upper_bound(G, d_lo, max_depth, depth, logger)
+        d_hi = bcd_upper_bound(
+            G,
+            d_lo,
+            max_depth,
+            depth,
+            logger,
+        )
         return d_lo, d_hi
     if strategy_name == msr_strategy.CLIQUE_UPPER.value:
-        d_hi = upper_bound_from_cliques(G, d_lo, max_depth, depth, logger)
+        d_hi = upper_bound_from_cliques(
+            G,
+            d_lo,
+            max_depth,
+            depth,
+            logger,
+        )
         return d_lo, d_hi
     if strategy_name == msr_strategy.CUT_VERT.value:
-        return bounds_from_cut_vert_induced_cover(G, max_depth, depth, logger)
+        return bounds_from_cut_vert_induced_cover(
+            G,
+            max_depth,
+            depth,
+            logger,
+        )
     if strategy_name == msr_strategy.INDUCED_SUBGRAPH.value:
         d_lo = lower_bound_induced_subgraphs(
-            G, d_lo, d_hi, max_depth, depth, logger
+            G,
+            d_lo,
+            d_hi,
+            max_depth,
+            depth,
+            logger,
         )
         return d_lo, d_hi
     if strategy_name == msr_strategy.EDGE_ADDITION.value:
         return bounds_from_edge_addition(
-            G, d_lo, d_hi, max_depth, depth, logger
+            G,
+            d_lo,
+            d_hi,
+            max_depth,
+            depth,
+            logger,
         )
     if strategy_name == msr_strategy.EDGE_REMOVAL.value:
-        return bounds_from_edge_removal(G, d_lo, d_hi, max_depth, depth, logger)
+        return bounds_from_edge_removal(
+            G,
+            d_lo,
+            d_hi,
+            max_depth,
+            depth,
+            logger,
+        )
     if strategy_name == msr_strategy.SDP_UPPER.value:
-        d_hi = msr_sdp_upper_bound(G, logger)
+        d_hi = msr_sdp_upper_bound(
+            G,
+            logger,
+        )
         return d_lo, d_hi
     if strategy_name == msr_strategy.SDP_SIGNED_EXHAUSTIVE.value:
-        d_hi = msr_sdp_signed_exhaustive(G, d_lo, logger)
+        d_hi = msr_sdp_signed_exhaustive(
+            G,
+            d_lo,
+            logger,
+        )
         return d_lo, d_hi
     if strategy_name == msr_strategy.SDP_SIGNED_SIMPLE.value:
-        d_hi = msr_sdp_signed_simple(G, d_lo, logger)
+        d_hi = msr_sdp_signed_simple(
+            G,
+            d_lo,
+            logger,
+        )
         return d_lo, d_hi
     if strategy_name == msr_strategy.SDP_SIGNED_CYCLE.value:
-        d_hi = msr_sdp_signed_cycle_search(G, d_lo, logger)
+        d_hi = msr_sdp_signed_cycle_search(
+            G,
+            d_lo,
+            logger,
+        )
         return d_lo, d_hi
     msg = "unknown strategy: " + strategy_name
     logger.error(msg)
@@ -239,7 +314,11 @@ def run_strategy(
 
 
 def check_bounds(
-    d_lo: int, d_hi: int, action_name: str, logger: logging.Logger, depth: int
+    d_lo: int,
+    d_hi: int,
+    action_name: str,
+    logger: logging.Logger,
+    depth: int,
 ) -> bool:
     """
     Checks that the bounds on dim(G) are tight.
@@ -257,7 +336,10 @@ def check_bounds(
 
 
 def get_bounds_on_components(
-    G: graph, max_depth: int, depth: int, logger: logging.Logger
+    G: graph,
+    max_depth: int,
+    depth: int,
+    logger: logging.Logger,
 ) -> tuple[int, int]:
     """
     Computes bounds on dim(G) by summing bounds on components of G.
@@ -287,7 +369,10 @@ def get_bounds_on_components(
 
 
 def reduce_and_bound_reduction(
-    G: graph, max_depth: int, depth: int, logger: logging.Logger
+    G: graph,
+    max_depth: int,
+    depth: int,
+    logger: logging.Logger,
 ) -> tuple[graph, int, int, bool]:
     """
     Performs the reduction G |-> H and returns H and bounds on dim(H).
@@ -347,7 +432,10 @@ def lower_bound_induced_subgraphs(
 
 
 def bounds_from_cut_vert_induced_cover(
-    G: graph, max_depth: int, depth: int, logger: logging.Logger
+    G: graph,
+    max_depth: int,
+    depth: int,
+    logger: logging.Logger,
 ) -> tuple[int, int]:
     """
     Checks if G has a cut vertex. If so, generate a proper induced cover
@@ -379,7 +467,11 @@ def bounds_from_cut_vert_induced_cover(
 
 
 def upper_bound_from_cliques(
-    G: graph, d_lo: int, max_depth: int, depth: int, logger: logging.Logger
+    G: graph,
+    d_lo: int,
+    max_depth: int,
+    depth: int,
+    logger: logging.Logger,
 ) -> int:
     """
     Returns an upper bound on dim(G) by locating a vertex i that is part of a
@@ -411,10 +503,10 @@ def bounds_from_edge_addition(
 ) -> tuple[int, int]:
     """
     Computes bounds on dim(G) by adding edges.
-    """
 
-    # NOTE: recursion depth maxes out if both edge removal and addition are
-    # both enabled
+    NOTE: Recursion depth maxes out if both edge removal and addition are both
+    enabled.
+    """
 
     logger.info("checking bounds from edge addition")
 
@@ -454,10 +546,10 @@ def bounds_from_edge_removal(
 ) -> tuple[int, int]:
     """
     Computes bounds on dim(G) by removing edges.
-    """
 
-    # NOTE: recursion depth maxes out if both edge removal and addition are
-    # both enabled
+    NOTE: Recursion depth maxes out if both edge removal and addition are both
+    enabled.
+    """
 
     logger.info("checking bounds from edge removal")
 
@@ -507,7 +599,7 @@ def bcd_bounds(
     m = len(R)
 
     # compute correction number
-    xi = _correction_number_lower_bound(G, R, d_hi, max_depth, depth, logger)
+    xi = _correction_number(G, R, d_hi, max_depth, depth, logger)
 
     # compute lower bound
     d_lo = xi + m
@@ -520,7 +612,54 @@ def bcd_bounds(
     return d_lo, d_hi
 
 
-def _correction_number_lower_bound(
+def bcd_bounds_exhaustive(
+    G: graph,
+    d_lo: int,
+    d_hi: int,
+    max_depth: int,
+    depth: int,
+    logger: logging.Logger,
+) -> tuple[int, int]:
+    """
+    Computes a lower bound on dim(G) by applying bridge-correction decomposition
+    to every independent set.
+    """
+
+    logger.info("starting exhaustive BCD search")
+
+    # obtain all independent sets
+    R_list = G.independent_sets()
+
+    # sort list of independent sets by size in descending order
+    R_list.sort(key=lambda R: len(R), reverse=True)
+
+    # find a maximum independent set
+    for R in R_list:
+        # size of independent set
+        m = len(R)
+
+        # compute correction number
+        xi = _correction_number(G, R, d_hi, max_depth, depth, logger)
+
+        # compute lower bound
+        d_lo_R = xi + m
+
+        # if dim(G) - |R| <= 1, then dim(G) = |R| + xi
+        if d_hi - m <= 1:
+            logger.debug("d_hi - m <= 1, tight bounds found")
+            d_hi = d_lo_R
+            return d_lo_R, d_hi
+
+        # update lower bound
+        d_lo = max(d_lo, d_lo_R)
+        if d_lo >= d_hi:
+            logger.debug("d_lo >= d_hi, tight bounds found")
+            return d_lo, d_hi
+
+    return d_lo, d_hi
+
+
+def _correction_number(
     G: graph,
     R: set[int],
     d_hi: int,

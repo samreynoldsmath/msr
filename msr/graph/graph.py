@@ -178,6 +178,12 @@ class graph:
             [i for i in range(self.num_verts) if self.vert_is_cut_vert(i)]
         )
 
+    ### INDEPENDENT SETS ######################################################
+
+    def is_independent_set(self, S: set[int]) -> bool:
+        """Returns True if S is an independent set."""
+        return all(not self.is_edge(i, j) for i in S for j in S if i != j)
+
     def maximal_independent_set(self) -> set[int]:
         """
         DEPRECATED: networkx has a better implementation of this function.
@@ -223,9 +229,19 @@ class graph:
                 indep_set = candidate.copy()
         return indep_set
 
-    def is_independent_set(self, S: set[int]) -> bool:
-        """Returns True if S is an independent set."""
-        return all(not self.is_edge(i, j) for i in S for j in S if i != j)
+    def independent_sets(self) -> list[set[int]]:
+        """Returns a list of all independent sets."""
+        indep_sets = []
+        num_subgraphs = 2**self.num_verts
+        for k in range(num_subgraphs - 1, 0, -1):
+            binary = bin(k)[2:].zfill(self.num_verts)
+            candidate = set()
+            for i, bit in enumerate(binary):
+                if bit == "1":
+                    candidate.add(i)
+            if self.is_independent_set(candidate):
+                indep_sets.append(candidate.copy())
+        return indep_sets
 
     ### VERTEX TESTS ##########################################################
 

@@ -20,7 +20,12 @@ def _msr_small_helper(n: int, test_dir: str) -> None:
     assert len(graphs) == len(data)
     for G in graphs:
         id = G.id()
-        d_lo, d_hi = msr.msr_bounds(G, load_flag=False, save_flag=False)
+        d_lo, d_hi = msr.msr_bounds(
+            G,
+            load_flag=False,
+            save_flag=False,
+            log_path=test_dir + "/log/",
+        )
         _assert_bounds_equal(id, d_lo, d_hi, data)
 
 
