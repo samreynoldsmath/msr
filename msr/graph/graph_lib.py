@@ -1,3 +1,7 @@
+"""
+Module for specific graphs, such as the complete graph, path graph, etc.
+"""
+
 from .graph import graph
 
 ### variable number of vertices ###############################################

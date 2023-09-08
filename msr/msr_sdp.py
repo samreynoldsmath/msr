@@ -1,3 +1,21 @@
+"""
+Module for computing an upper bound on msr(G) using a semidefinite program.
+
+A relaxation of the objective function rank(A) to the trace
+tr(A) and casts the problem as a semidefinite program. The sparsity constraints
+$A_{ij} \neq 0$ for $ij \in E$ are nonconvex, and we instead use
+$A_{ij} \geq \varepsilon$ for some fixed $\varepsilon > 0$. By introducing
+slack variables, the feasible set can be shown to be a spectrahedron.
+
+These constraints are a proper subset of the original sparsity constraints,
+and for some graphs (e.g. the 4-cycle), the SDP returns an estimation of
+$\text{msr}(G)$ that is strictly larger than the exact solution.
+
+TODO: Further investigation is required to determine which types of graphs
+have a minimum rank positive semidefinite generalized adjacency matrix with
+nonnegative entries.
+"""
+
 from itertools import combinations
 from logging import Logger
 
@@ -98,20 +116,7 @@ def _have_same_non_diagonal_sign_pattern(
 
 def msr_sdp_upper_bound(G: graph, logger: Logger, tol: float = 1e-4) -> int:
     """
-    Obtains an approximation of $\text{msr}(G)$ using a relaxation of the
-    objective function $\text{rank}(A)$ to the trace $\text{tr}(A)$ and casts
-    the problem as a semidefinite program. The sparsity constraints
-    $A_{ij} \neq 0$ for $ij \in E$ are nonconvex, and we instead use
-    $A_{ij} \geq \varepsilon$ for some fixed $\varepsilon > 0$. By introducing
-    slack variables, the feasible set can be shown to be a spectrahedron.
-
-    These constraints are a proper subset of the original sparsity constraints,
-    and for some graphs (e.g. the 4-cycle), the SDP returns an estimation of
-    $\text{msr}(G)$ that is strictly larger than the exact solution.
-
-    TODO: Further investigation is required to determine which types of graphs
-    have a minimum rank positive semidefinite generalized adjacency matrix with
-    nonnegative entries.
+    Uses all positive edge signs to find an upper bound on msr(G).
     """
 
     logger.debug("beginning SDP relaxation to obtain upper bound")

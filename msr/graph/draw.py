@@ -1,3 +1,7 @@
+"""
+Module drawing graphs using matplotlib.
+"""
+
 import os
 from multiprocessing import Pool
 

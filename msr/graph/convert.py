@@ -1,3 +1,7 @@
+"""
+Module for converting between native and networkx graphs.
+"""
+
 from networkx import Graph
 
 from .graph import graph

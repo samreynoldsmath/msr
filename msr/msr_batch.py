@@ -1,3 +1,7 @@
+"""
+Functions for computing the MSR bounds for a batch of graphs with multiprocessing.
+"""
+
 import multiprocessing
 
 from tqdm import tqdm

@@ -1,3 +1,10 @@
+"""GRAPH
+
+This subpackage contains the graph class and functions for generating,
+saving/loading, embedding/drawing, and performing operations on graphs. The
+`saved/` directory contains a collection of graphs.
+"""
+
 from .draw import draw_graph, draw_graphs
 from .file_io import (
     SAVED_GRAPH_DIR,

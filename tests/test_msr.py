@@ -1,16 +1,25 @@
 import sys
 import os
 import json
+import logging
+
+TEST_PATH = os.path.dirname(__file__)
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import msr
 
 
-def test_msr_small() -> None:
-    test_dir = os.path.dirname(__file__)
-    for n in [4, 5, 6]:
-        _msr_small_helper(n, test_dir)
+def test_msr_4_vert() -> None:
+    _msr_small_helper(4, TEST_PATH)
+
+
+def test_msr_5_vert() -> None:
+    _msr_small_helper(5, TEST_PATH)
+
+
+def test_msr_6_vert() -> None:
+    _msr_small_helper(6, TEST_PATH)
 
 
 def _msr_small_helper(n: int, test_dir: str) -> None:
@@ -22,9 +31,10 @@ def _msr_small_helper(n: int, test_dir: str) -> None:
         id = G.id()
         d_lo, d_hi = msr.msr_bounds(
             G,
-            load_flag=False,
-            save_flag=False,
+            load_bounds=False,
+            save_bounds=False,
             log_path=test_dir + "/log/",
+            log_level=logging.INFO,
         )
         _assert_bounds_equal(id, d_lo, d_hi, data)
 

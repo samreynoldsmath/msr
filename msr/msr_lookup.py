@@ -1,3 +1,9 @@
+"""
+Module for looking up MSR bounds for graphs. The bounds are saved in JSON files
+in the soln/ directory. The files are named by the minimum hash of the
+isomorphism equivalence class of the graph.
+"""
+
 import json
 import os
 from itertools import permutations

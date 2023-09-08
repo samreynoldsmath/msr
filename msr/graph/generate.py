@@ -1,3 +1,7 @@
+"""
+Module for generating all graphs on n vertices up to isomorphism.
+"""
+
 from itertools import permutations
 from math import factorial
 from multiprocessing import Pool
@@ -77,7 +81,7 @@ def is_not_new_graph(G: graph, found_hashes: set[int]) -> tuple[bool, set[int]]:
             chunksize=max(10, num_perms // 128),
         )
     is_not_new = any([H_is_not_new for _, H_is_not_new in res])
-    seen = set([k for k, _ in res])
+    seen = set(k for k, _ in res)
     return is_not_new, seen
 
 

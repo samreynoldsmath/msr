@@ -1,3 +1,8 @@
+"""
+Module for logging configuration, including a function to configure logging
+and the path to the log directory.
+"""
+
 import logging
 import os
 
@@ -9,6 +14,10 @@ def configure_logging(
     filename: str = "temp.log",
     level: int = logging.ERROR,
 ) -> logging.Logger:
+    """
+    Configure logging to write to a file and/or stdout, and return a logger
+    object.
+    """
     logger = logging.getLogger(filename)
     logger.setLevel(level)
     fh_formatter = logging.Formatter(

@@ -1,4 +1,8 @@
-from numpy import cos, diag, ndarray, pi, sin, sqrt, sum, zeros
+"""
+Module for embedding graphs in the plane.
+"""
+
+from numpy import cos, ndarray, pi, sin, sqrt, sum, zeros
 from numpy.linalg import eig
 from numpy.random import random
 

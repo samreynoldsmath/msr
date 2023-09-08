@@ -1,3 +1,8 @@
+"""
+Module for reducing the number of vertices in a graph with predictable changes
+to the dimension of the graph.
+"""
+
 from logging import Logger
 
 from .graph.graph import graph

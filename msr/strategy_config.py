@@ -1,3 +1,7 @@
+"""
+Module for configuring the strategy for computing bounds on msr(G).
+"""
+
 import logging
 from enum import Enum
 
@@ -23,9 +27,11 @@ STRATEGY: list[msr_strategy] = [
     msr_strategy.CUT_VERT,
     msr_strategy.INDUCED_SUBGRAPH,
     msr_strategy.CLIQUE_UPPER,
-    msr_strategy.BCD_LOWER_EXHAUSTIVE,
+    msr_strategy.SDP_UPPER,
     msr_strategy.EDGE_ADDITION,
+    msr_strategy.BCD_LOWER_EXHAUSTIVE,
     msr_strategy.SDP_SIGNED_CYCLE,
+    msr_strategy.BCD_UPPER,
 ]
 
 
