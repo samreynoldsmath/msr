@@ -1,3 +1,7 @@
+## [2023 Sep 08] 0.8.1 Context Manager
+- `msr_bounds` now uses a context manager to handle logging, updating bounds, checking recursion depth, etc.
+- Added `pylint` to `requirements-dev.txt`
+
 ## [2023 Sep 07] 0.8.0 Exhaustive BCD
 - Introduced exhaustive BCD
   - `bcd_exhaustive` computes a lower bound on MSR by considering all possible independent sets

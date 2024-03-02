@@ -3,9 +3,10 @@ Module for context manager for computing bounds on msr(G).
 """
 
 from __future__ import annotations
-from copy import copy
 
 import logging
+from copy import copy
+
 from .log_config import LOG_PATH, configure_logging
 from .strategy_config import STRATEGY, check_strategy
 
