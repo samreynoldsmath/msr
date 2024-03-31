@@ -1,4 +1,4 @@
-"""
+r"""
 Module for computing an upper bound on msr(G) using a semidefinite program.
 
 A relaxation of the objective function rank(A) to the trace
@@ -190,7 +190,7 @@ def msr_sdp_signed_cycle_search(
         if d_hi <= d_lo:
             logger.info(f"signed cycle search succeeded with flip {k}")
             return d_hi
-    logger.info(f"signed cycle search exited without tight bound")
+    logger.info("signed cycle search exited without tight bound")
     return d_hi
 
 
@@ -242,5 +242,5 @@ def msr_sdp_signed_exhaustive(
         if d_hi <= d_lo:
             logger.info(f"exhaustive search succeeded with flip {k}")
             return d_hi
-    logger.info(f"exhaustive search failed")
+    logger.info("exhaustive search failed")
     return d_hi
