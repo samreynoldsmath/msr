@@ -64,7 +64,7 @@ def save_msr_bounds(G: graph, d_lo: int, d_hi: int, logger: Logger) -> None:
         return
     logger.info(f"saving bounds {d_lo}, {d_hi} for {G.hash_id()}")
     filename = bounds_filename(G)
-    with open(filename, "w") as f:
+    with open(filename, "w", encoding="utf-8") as f:
         json.dump({"d_lo": int(d_lo), "d_hi": int(d_hi)}, f)
 
 
@@ -77,7 +77,7 @@ def load_msr_bounds(G: graph, logger: Logger) -> tuple[int, int]:
         logger.info("no saved bounds found, returning 0, n")
         return 0, G.num_verts
     logger.info(f"loading bounds from {filename}")
-    with open(filename, "r") as f:
+    with open(filename, "r", encoding="utf-8") as f:
         data = json.load(f)
         d_lo = data["d_lo"]
         d_hi = data["d_hi"]
