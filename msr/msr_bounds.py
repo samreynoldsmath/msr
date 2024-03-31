@@ -218,7 +218,8 @@ def _reduce_and_bound_reduction(
     If the reduction is nontrivial, we get bounds on the reduced graph using
     simple methods. (This includes using advanced methods on the components of
     the reduced graph, if it is disconnected.) If this fails to get tight
-    bounds, we will attempt advanced strategies after returning to _dim_bounds().
+    bounds, we will attempt advanced strategies after returning to
+    _dim_bounds().
     """
 
     # reduce the graph
@@ -340,7 +341,7 @@ def _bounds_from_edge_addition(
 
     # sort vertices in descending order by degree
     perm = list(range(G.num_verts))
-    perm.sort(key=lambda i: G.vert_deg(i), reverse=True)
+    perm.sort(key=G.vert_deg, reverse=True)
     G.permute_verts(perm)
 
     # add edges
@@ -382,7 +383,7 @@ def _bounds_from_edge_removal(
 
     # sort vertices in ascending order by degree
     perm = list(range(G.num_verts))
-    perm.sort(key=lambda i: G.vert_deg(i))
+    perm.sort(key=G.vert_deg)
     G.permute_verts(perm)
 
     # remove edges
