@@ -59,7 +59,7 @@ class graph:
         self.known_msr = None
 
     def __str__(self) -> str:
-        s = self.id()
+        s = self.hash_id()
         s += "\nNumber of edges: " + str(self.num_edges())
         s += "\nEdges:"
         for k, e in enumerate(self.edges):
@@ -86,20 +86,20 @@ class graph:
         binary_str = "".join([str(b) for b in binary_list])
         return int(binary_str, 2)
 
-    def id(self) -> str:
+    def hash_id(self) -> str:
         return f"n{self.num_verts}k{hash(self)}"
 
     ### CONSTRUCTION ##########################################################
 
-    def build_from_hash(self, id: int) -> None:
+    def build_from_hash(self, hash_id: int) -> None:
         """
         Builds the graph from its hash value.
         """
         n = self.num_verts
         n_choose_2 = n * (n - 1) // 2
-        if id < 0 or id >= 2**n_choose_2:
+        if hash_id < 0 or hash_id >= 2**n_choose_2:
             raise ValueError("Hash value out of bounds.")
-        binary = bin(id)[2:].zfill(n_choose_2)
+        binary = bin(hash_id)[2:].zfill(n_choose_2)
         self.edges = set()
         for i in range(n - 1):
             for j in range(i + 1, n):
