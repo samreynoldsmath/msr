@@ -28,10 +28,9 @@ def configure_logging(
         sh.setFormatter(fh_formatter)
         logger.addHandler(sh)
         return logger
-    else:
-        if not os.path.exists(log_path):
-            os.makedirs(log_path)
-        fh = logging.FileHandler(log_path + filename, mode="w")
-        fh.setFormatter(fh_formatter)
-        logger.addHandler(fh)
-        return logger
+    if not os.path.exists(log_path):
+        os.makedirs(log_path)
+    fh = logging.FileHandler(log_path + filename, mode="w")
+    fh.setFormatter(fh_formatter)
+    logger.addHandler(fh)
+    return logger
