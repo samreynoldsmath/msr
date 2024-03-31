@@ -28,13 +28,13 @@ def generate_all_graphs_on_n_vertices(n: int) -> list[graph]:
     Generates all graphs on n vertices by constructing all graphs isomorphic to
     G and testing if any of these graphs have been seen.
 
-    Idea from https://stackoverflow.com/questions/71597789/generate-all-digraphs-of-a-given-size-up-to-isomorphism
+    See doc/MISC.md for a link to the StackOverflow post that inspired this.
     """
 
     num_candidates = 2 ** (n * (n - 1) // 2)
 
     found_hashes: set[int] = set()
-    encountered: list[bool] = list([False for _ in range(num_candidates)])
+    encountered: list[bool] = [False for _ in range(num_candidates)]
 
     # hash each graph as an integer k, such that k written in binary represents
     # the edges of the graph, with zero being a non-edge, and one being an edge.
@@ -80,7 +80,7 @@ def is_not_new_graph(G: graph, found_hashes: set[int]) -> tuple[bool, set[int]]:
             [(G, perm, found_hashes) for perm in perms],
             chunksize=max(10, num_perms // 128),
         )
-    is_not_new = any([H_is_not_new for _, H_is_not_new in res])
+    is_not_new = any(H_is_not_new for _, H_is_not_new in res)
     seen = set(k for k, _ in res)
     return is_not_new, seen
 
