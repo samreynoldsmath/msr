@@ -4,6 +4,7 @@ Module for representing simple undirected graphs.
 
 from __future__ import annotations
 
+from copy import copy
 from typing import Optional
 
 from numpy import ndarray, zeros
@@ -62,7 +63,7 @@ class graph:
         s += "\nNumber of edges: " + str(self.num_edges())
         s += "\nEdges:"
         for k, e in enumerate(self.edges):
-            s += "\n%3d\t" % k + str(e)
+            s += f"\n{k:3d}\t{str(e)}"
         return s
 
     def __repr__(self) -> str:
@@ -141,7 +142,7 @@ class graph:
         """Returns the set of neighbors of the given vertex."""
         if i < 0 or i >= self.num_verts:
             raise ValueError("Vertex index out of bounds.")
-        return set([j for j in range(self.num_verts) if self.is_edge(i, j)])
+        return {j for j in range(self.num_verts) if self.is_edge(i, j)}
 
     def vert_deg(self, i: int) -> int:
         """Returns the degree of the given vertex."""
@@ -178,9 +179,7 @@ class graph:
     def get_cut_verts(self) -> set[int]:
         """Returns the set of cut vertices in the graph."""
         # TODO: Tarjan's algorithm is more efficient
-        return set(
-            [i for i in range(self.num_verts) if self.vert_is_cut_vert(i)]
-        )
+        return {i for i in range(self.num_verts) if self.vert_is_cut_vert(i)}
 
     ### INDEPENDENT SETS ######################################################
 
@@ -337,7 +336,7 @@ class graph:
                 for j in range(i + 1, num_verts):
                     if self.is_edge(verts_list[i], verts_list[j]):
                         H.add_edge(i, j)
-            H._is_connected_flag = True
+            H.set_connected_flag(True)
             components.append(H)
         return components
 
@@ -349,7 +348,7 @@ class graph:
         component_index_list = []
         visited: set[int] = set()
         for i in range(self.num_verts):
-            if not (i in visited):
+            if i not in visited:
                 this_component_idx_set = self.bfs(i)
                 visited = visited.union(this_component_idx_set)
                 component_index_list.append(this_component_idx_set)
@@ -397,7 +396,7 @@ class graph:
             ]
 
         # construct a proper induced cover
-        H = self.__copy__()
+        H = copy(self)
         H.remove_vert(cut_vert_idx)
         component_vert_idx = H.connected_components_vert_idx()
         cover = []
@@ -410,11 +409,14 @@ class graph:
                 for j in range(i + 1, num_verts):
                     if self.is_edge(verts_list[i], verts_list[j]):
                         H.add_edge(i, j)
-            H._is_connected_flag = True
+            H.set_connected_flag(True)
             cover.append(H)
         return cover
 
     ### GRAPH TESTS ###########################################################
+
+    def set_connected_flag(self, flag: bool) -> None:
+        self._is_connected_flag = flag
 
     def is_connected(self) -> bool:
         """Returns True if the graph is connected."""
