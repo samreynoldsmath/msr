@@ -592,7 +592,7 @@ def _bcd_upper_bound(G: graph, ctx: context_manager) -> context_manager:
         # TODO: this is suboptimal
         clique = set([i])
         for j in N:
-            if all([G.is_edge(j, k) for k in clique]):
+            if all(G.is_edge(j, k) for k in clique):
                 clique.add(j)
 
         # apply BCD
