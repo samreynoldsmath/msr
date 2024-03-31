@@ -68,7 +68,7 @@ class context_manager:
         msg = f"computing bounds on msr(G) with G = {graph_str}"
         msg += "\nUsing strategy: "
         for k, strategy in enumerate(STRATEGY):
-            msg += "\n%2d.\t" % k + strategy.value
+            msg += f"\n{k}{strategy.value}.\t"
         self.logger.info(msg)
         check_strategy(self.logger)
 
