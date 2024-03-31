@@ -41,17 +41,18 @@ filterwarnings = ["error"]
 max-line-length = 80
 disable = [
   "fixme", # reenable to find TODO comments
-  "invalid-name", # use good-names
-  "missing-module-docstring", # TODO
-  "missing-function-docstring", # TODO
-  "missing-class-docstring", # TODO
+  "invalid-name", # use good-names below
   "too-many-public-methods", # TODO
   "too-few-public-methods", # TODO
   "too-many-arguments", # TODO
   "too-many-locals", # TODO
   "too-many-branches", # TODO
-  "pointless-string-statement", # TODO
   "too-many-statements", # TODO
   "too-many-return-statements", # TODO
+  "too-many-instance-attributes", # TODO
+  "missing-module-docstring", # TODO
+  "missing-function-docstring", # TODO
+  "missing-class-docstring", # TODO
+  "pointless-string-statement", # TODO
 ]
 good-names = []
