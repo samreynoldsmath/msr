@@ -281,7 +281,7 @@ class graph:
             return False
         if self.vert_deg(i) < 2:
             return False
-        G = self.__copy__()
+        G = copy(self)
         G.remove_vert(i)
         return not G.is_connected()
 
