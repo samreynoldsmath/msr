@@ -29,7 +29,7 @@ def load_graph(filename: str) -> graph:
     """Load a graph from a json file."""
 
     # load graph data from json file
-    with open(filename, "r") as f:
+    with open(filename, "r", encoding="utf-8") as f:
         data = json.load(f)
 
     # create graph object
@@ -93,7 +93,7 @@ def _custom_json_dump(data, filename, indent=4):
         else:
             return ", ".join(json.dumps(item) for item in lst)
 
-    with open(filename, "w") as f:
+    with open(filename, "w", encoding="utf-8") as f:
         f.write("{\n")
         for key, value in data.items():
             if key == "edges":
