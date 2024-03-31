@@ -1,5 +1,6 @@
 """
-Functions for computing the MSR bounds for a batch of graphs with multiprocessing.
+Functions for computing the MSR bounds for a batch of graphs with
+multiprocessing.
 """
 
 import multiprocessing
@@ -22,8 +23,7 @@ def msr_batch_from_directory(
     filenames = files_in_directory(path, num_verts)
     if quiet:
         return _msr_batch_from_directory_quiet(filenames)
-    else:
-        return _msr_batch_from_directory_loud(filenames)
+    return _msr_batch_from_directory_loud(filenames)
 
 
 def _msr_batch_from_directory_loud(
@@ -61,8 +61,7 @@ def msr_batch(
     """Computes the MSR bounds for a batch of graphs with multiprocessing."""
     if quiet:
         return _msr_batch_quiet(graphs)
-    else:
-        return _msr_batch_loud(graphs)
+    return _msr_batch_loud(graphs)
 
 
 def _msr_batch_loud(graphs: list[graph]) -> list[tuple[int, int, str]]:
