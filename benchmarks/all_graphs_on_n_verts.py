@@ -22,20 +22,19 @@ def main(n: int):
     """
 
     # compute bounds on all graphs
-    bounds_and_ids = msr.msr_batch_from_directory(quiet=QUIET, num_verts=n)
+    bounds_and_hash_ids = msr.msr_batch_from_directory(quiet=QUIET, num_verts=n)
 
     # find troublemakers
     not_tight = 0
-    ids = []
-    for b in bounds_and_ids:
-        d_lo, d_hi, id = b
+    hash_ids = []
+    for d_lo, d_hi, hash_id in bounds_and_hash_ids:
         if d_lo != d_hi:
             not_tight += 1
-            ids.append(id)
-            print(f"{id}: {d_lo}, {d_hi}")
+            hash_ids.append(hash_id)
+            print(f"{hash_id}: {d_lo}, {d_hi}")
 
     # number of graphs in test set
-    num_graphs = len(bounds_and_ids)
+    num_graphs = len(bounds_and_hash_ids)
 
     # final report
     if not_tight == 0:
@@ -47,11 +46,11 @@ def main(n: int):
         )
 
     # save figures of troublemakers
-    if SAVE_FIGS and len(ids) > 0:
+    if SAVE_FIGS and len(hash_ids) > 0:
         print("saving figures...")
-        for id in tqdm(ids):
-            graph_file = msr.graph.SAVED_GRAPH_DIR + f"{id}.graph"
-            image_file = FIG_DIR + f"{id}.png"
+        for hash_id in tqdm(hash_ids):
+            graph_file = msr.graph.SAVED_GRAPH_DIR + f"{hash_id}.graph"
+            image_file = FIG_DIR + f"{hash_id}.png"
             msr.graph.draw_graph(
                 G=msr.graph.load_graph(graph_file),
                 embedding="min_entropy",

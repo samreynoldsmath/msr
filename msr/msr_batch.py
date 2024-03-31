@@ -82,4 +82,4 @@ def _msr_batch_quiet(graphs: list[graph]) -> list[tuple[int, int, str]]:
 def _msr_bounds_with_id(G: graph) -> tuple[int, int, str]:
     """Helper function for msr_batch."""
     d_lo, d_hi = msr_bounds(G)
-    return d_lo, d_hi, G.id()
+    return d_lo, d_hi, G.hash_id()

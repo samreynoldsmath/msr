@@ -57,7 +57,7 @@ def load_graphs_from_directory(
 def save_graph(G: graph, filename: str = "") -> None:
     """Save a graph to a json file."""
     if len(filename) == 0:
-        filename = SAVED_GRAPH_DIR + f"{G.id()}.graph"
+        filename = SAVED_GRAPH_DIR + f"{G.hash_id()}.graph"
     edges = []
     for e in G.edges:
         i, j = e.endpoints
@@ -78,7 +78,7 @@ def save_graphs(graphs: list[graph], path: str = SAVED_GRAPH_DIR) -> None:
 
     # save graphs
     for G in graphs:
-        filename = path + f"{G.id()}.graph"
+        filename = path + f"{G.hash_id()}.graph"
         save_graph(G, filename)
 
 

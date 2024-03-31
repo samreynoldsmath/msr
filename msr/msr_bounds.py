@@ -53,7 +53,7 @@ def msr_bounds(G: graph, **kwargs) -> tuple[int, int]:
 
     Keyword arguments:
     - log_path:         path to log file (default: "msr/log")
-    - log_filename:     name of log file (default: G.id() + ".log"
+    - log_filename:     name of log file (default: G.hash_id() + ".log"
     - log_level:        logging level (default: logging.ERROR)
     - max_depth:        maximum recursion depth (default: 10 * G.num_verts)
     - load_bounds:      load bounds from file (default: True)
@@ -61,7 +61,7 @@ def msr_bounds(G: graph, **kwargs) -> tuple[int, int]:
     """
 
     # configure context manager and start new log
-    ctx = context_manager(num_verts=G.num_verts, graph_id=G.id(), **kwargs)
+    ctx = context_manager(num_verts=G.num_verts, graph_id=G.hash_id(), **kwargs)
     ctx.start_new_log(graph_str=str(G))
 
     # find number of isolated vertices
@@ -433,7 +433,7 @@ def _bcd_bounds_exhaustive(G: graph, ctx: context_manager) -> context_manager:
     R_list = G.independent_sets()
 
     # sort list of independent sets by size in descending order
-    R_list.sort(key=lambda R: len(R), reverse=True)
+    R_list.sort(key=len, reverse=True)
 
     # find a maximum independent set
     for R in R_list:

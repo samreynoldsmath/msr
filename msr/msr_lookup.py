@@ -62,7 +62,7 @@ def save_msr_bounds(G: graph, d_lo: int, d_hi: int, logger: Logger) -> None:
     if d_lo > d_hi:
         logger.warning("d_lo > d_hi, not saving bounds")
         return
-    logger.info(f"saving bounds {d_lo}, {d_hi} for {G.id()}")
+    logger.info(f"saving bounds {d_lo}, {d_hi} for {G.hash_id()}")
     filename = bounds_filename(G)
     with open(filename, "w") as f:
         json.dump({"d_lo": int(d_lo), "d_hi": int(d_hi)}, f)

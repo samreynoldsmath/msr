@@ -28,7 +28,6 @@ def _msr_small_helper(n: int, test_dir: str) -> None:
     graphs = msr.graph.load_graphs_from_directory(num_verts=n)
     assert len(graphs) == len(data)
     for G in graphs:
-        id = G.id()
         d_lo, d_hi = msr.msr_bounds(
             G,
             load_bounds=False,
@@ -36,10 +35,10 @@ def _msr_small_helper(n: int, test_dir: str) -> None:
             log_path=test_dir + "/log/",
             log_level=logging.INFO,
         )
-        _assert_bounds_equal(id, d_lo, d_hi, data)
+        _assert_bounds_equal(G.hash_id(), d_lo, d_hi, data)
 
 
-def _assert_bounds_equal(id: str, d_lo: int, d_hi: int, data: dict) -> None:
-    name = "k" + id.split("k")[1]
+def _assert_bounds_equal(hash_id: str, d_lo: int, d_hi: int, data: dict) -> None:
+    name = "k" + hash_id.split("k")[1]
     assert data[name] == d_lo
     assert data[name] == d_hi
