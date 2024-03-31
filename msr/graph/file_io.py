@@ -90,8 +90,7 @@ def _custom_json_dump(data, filename, indent=4):
             return ",\n".join(
                 " " * level + json.dumps(sub_list) for sub_list in lst
             )
-        else:
-            return ", ".join(json.dumps(item) for item in lst)
+        return ", ".join(json.dumps(item) for item in lst)
 
     with open(filename, "w", encoding="utf-8") as f:
         f.write("{\n")
