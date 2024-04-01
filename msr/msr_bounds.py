@@ -17,7 +17,7 @@ from .msr_sdp import (
     msr_sdp_upper_bound,
 )
 from .reduce import reduce
-from .strategy_config import STRATEGY, msr_strategy
+from .strategy_config import STRATEGY, BoundsStrategy
 
 
 def build_strategy_dict() -> dict[
@@ -37,18 +37,18 @@ def build_strategy_dict() -> dict[
             [SimpleGraph, GraphBoundsContextManager], GraphBoundsContextManager
         ],
     ] = {
-        msr_strategy.BCD_LOWER_EXHAUSTIVE.value: _bcd_bounds_exhaustive,
-        msr_strategy.BCD_LOWER.value: _bcd_max_indp_set,
-        msr_strategy.BCD_UPPER.value: _bcd_upper_bound,
-        msr_strategy.CLIQUE_UPPER.value: _upper_bound_from_cliques,
-        msr_strategy.CUT_VERT.value: _bounds_from_cut_vert_induced_cover,
-        msr_strategy.INDUCED_SUBGRAPH.value: _lower_bound_induced_subgraphs,
-        msr_strategy.EDGE_ADDITION.value: _bounds_from_edge_addition,
-        msr_strategy.EDGE_REMOVAL.value: _bounds_from_edge_removal,
-        msr_strategy.SDP_SIGNED_CYCLE.value: _sdp_signed_cycle,
-        msr_strategy.SDP_SIGNED_EXHAUSTIVE.value: _sdp_signed_exhaustive,
-        msr_strategy.SDP_SIGNED_SIMPLE.value: _sdp_signed_simple,
-        msr_strategy.SDP_UPPER.value: _sdp_upper,
+        BoundsStrategy.BCD_LOWER_EXHAUSTIVE.value: _bcd_bounds_exhaustive,
+        BoundsStrategy.BCD_LOWER.value: _bcd_max_indp_set,
+        BoundsStrategy.BCD_UPPER.value: _bcd_upper_bound,
+        BoundsStrategy.CLIQUE_UPPER.value: _upper_bound_from_cliques,
+        BoundsStrategy.CUT_VERT.value: _bounds_from_cut_vert_induced_cover,
+        BoundsStrategy.INDUCED_SUBGRAPH.value: _lower_bound_induced_subgraphs,
+        BoundsStrategy.EDGE_ADDITION.value: _bounds_from_edge_addition,
+        BoundsStrategy.EDGE_REMOVAL.value: _bounds_from_edge_removal,
+        BoundsStrategy.SDP_SIGNED_CYCLE.value: _sdp_signed_cycle,
+        BoundsStrategy.SDP_SIGNED_EXHAUSTIVE.value: _sdp_signed_exhaustive,
+        BoundsStrategy.SDP_SIGNED_SIMPLE.value: _sdp_signed_simple,
+        BoundsStrategy.SDP_UPPER.value: _sdp_upper,
     }
     return strategy_dict
 
