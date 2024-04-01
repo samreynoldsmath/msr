@@ -1,4 +1,4 @@
-"""
+r"""
 Module for computing an upper bound on msr(G) using a semidefinite program.
 
 A relaxation of the objective function rank(A) to the trace
@@ -23,7 +23,7 @@ import cvxpy as cp
 from numpy import ndarray, sign, sqrt, zeros
 from numpy.linalg import norm, svd
 
-from .graph.graph import graph, undirected_edge
+from .graph.graph import SimpleGraph, UndirectedEdge
 
 
 def msr_sdp_signed(
@@ -114,7 +114,9 @@ def _have_same_non_diagonal_sign_pattern(
     return True
 
 
-def msr_sdp_upper_bound(G: graph, logger: Logger, tol: float = 1e-4) -> int:
+def msr_sdp_upper_bound(
+    G: SimpleGraph, logger: Logger, tol: float = 1e-4
+) -> int:
     """
     Uses all positive edge signs to find an upper bound on msr(G).
     """
@@ -125,7 +127,9 @@ def msr_sdp_upper_bound(G: graph, logger: Logger, tol: float = 1e-4) -> int:
     return msr_sdp_signed(A, logger, tol)
 
 
-def msr_sdp_signed_simple(G: graph, d_lo: int, logger: Logger, tol=1e-4) -> int:
+def msr_sdp_signed_simple(
+    G: SimpleGraph, d_lo: int, logger: Logger, tol=1e-4
+) -> int:
     """
     Flips sign of each edge in turn to find the minimum rank of a positive
     semidefinite generalized adjacency matrix.
@@ -156,7 +160,7 @@ def msr_sdp_signed_simple(G: graph, d_lo: int, logger: Logger, tol=1e-4) -> int:
 
 
 def msr_sdp_signed_cycle_search(
-    G: graph, d_lo: int, logger: Logger, tol=1e-4
+    G: SimpleGraph, d_lo: int, logger: Logger, tol=1e-4
 ) -> int:
     """
     Flips sign of each edge in turn to find the minimum rank of a positive
@@ -190,15 +194,15 @@ def msr_sdp_signed_cycle_search(
         if d_hi <= d_lo:
             logger.info(f"signed cycle search succeeded with flip {k}")
             return d_hi
-    logger.info(f"signed cycle search exited without tight bound")
+    logger.info("signed cycle search exited without tight bound")
     return d_hi
 
 
-def _edges_in_induced_even_cycle(G: graph) -> list[undirected_edge]:
+def _edges_in_induced_even_cycle(G: SimpleGraph) -> list[UndirectedEdge]:
     """Returns set of edges in an induced even cycle."""
     n = G.num_verts
     max_num_verts_induced_cycle = 2 * (n // 2)
-    edges: set[undirected_edge] = set()
+    edges: set[UndirectedEdge] = set()
 
     # loop over induced subgraphs with even number of vertices >= 4
     for m in range(4, max_num_verts_induced_cycle + 1, 2):
@@ -209,13 +213,13 @@ def _edges_in_induced_even_cycle(G: graph) -> list[undirected_edge]:
                 for ij in combinations(vert_set, 2):
                     i, j = ij
                     if G.is_edge(i, j):
-                        edges.add(undirected_edge(i, j))
+                        edges.add(UndirectedEdge(i, j))
 
     return list(edges)
 
 
 def msr_sdp_signed_exhaustive(
-    G: graph, d_lo: int, logger: Logger, tol=1e-4
+    G: SimpleGraph, d_lo: int, logger: Logger, tol=1e-4
 ) -> int:
     """
     Searches over all possible edge signs to find the minimum rank of a
@@ -242,5 +246,5 @@ def msr_sdp_signed_exhaustive(
         if d_hi <= d_lo:
             logger.info(f"exhaustive search succeeded with flip {k}")
             return d_hi
-    logger.info(f"exhaustive search failed")
+    logger.info("exhaustive search failed")
     return d_hi

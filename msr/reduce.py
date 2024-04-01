@@ -5,10 +5,14 @@ to the dimension of the graph.
 
 from logging import Logger
 
-from .graph.graph import graph
+from .graph.graph import SimpleGraph
 
 
-def reduce(G: graph, logger: Logger) -> tuple[graph, int, int]:
+class ReductionError(Exception):
+    """Error raised when reduction fails."""
+
+
+def reduce(G: SimpleGraph, logger: Logger) -> tuple[SimpleGraph, int, int]:
     """
     Attempts to reduce the number of vertices in the graph by
     * removing pendants
@@ -27,7 +31,7 @@ def reduce(G: graph, logger: Logger) -> tuple[graph, int, int]:
     if not G.is_connected():
         msg = "reduction loop assumes G is connected"
         logger.error(msg)
-        raise Exception(msg)
+        raise ReductionError(msg)
 
     logger.info("performing reduction")
 
@@ -93,6 +97,9 @@ def reduce(G: graph, logger: Logger) -> tuple[graph, int, int]:
 def reduction_report(
     deletions: int, d_diff: int, updated: bool, logger: Logger
 ) -> None:
+    """
+    Logs the results of the reduction.
+    """
     if not updated:
         logger.debug("reduction stagnated")
     v = "vertices" if deletions != 1 else "vertex"
@@ -102,7 +109,7 @@ def reduction_report(
     )
 
 
-def check_stopping_criteria(G: graph, logger: Logger) -> bool:
+def check_stopping_criteria(G: SimpleGraph, logger: Logger) -> bool:
     """
     reduction completes if G is
     * has less than 3 vertices
@@ -124,7 +131,9 @@ def check_stopping_criteria(G: graph, logger: Logger) -> bool:
     return stop
 
 
-def remove_pendants(G: graph, logger: Logger) -> tuple[graph, bool, int]:
+def remove_pendants(
+    G: SimpleGraph, logger: Logger
+) -> tuple[SimpleGraph, bool, int]:
     """
     Removes all pendant vertices.
     """
@@ -144,7 +153,9 @@ def remove_pendants(G: graph, logger: Logger) -> tuple[graph, bool, int]:
     return G, updated, local_deletions
 
 
-def remove_subdivisions(G: graph, logger: Logger) -> tuple[graph, bool, int]:
+def remove_subdivisions(
+    G: SimpleGraph, logger: Logger
+) -> tuple[SimpleGraph, bool, int]:
     """
     Removes all subdivisions.
     """
@@ -166,7 +177,9 @@ def remove_subdivisions(G: graph, logger: Logger) -> tuple[graph, bool, int]:
     return G, updated, local_deletions
 
 
-def remove_redundant_verts(G: graph, logger: Logger) -> tuple[graph, bool, int]:
+def remove_redundant_verts(
+    G: SimpleGraph, logger: Logger
+) -> tuple[SimpleGraph, bool, int]:
     """
     Removes all vertices adjacent to every other vertex.
 
@@ -193,7 +206,9 @@ def remove_redundant_verts(G: graph, logger: Logger) -> tuple[graph, bool, int]:
     return G, updated, local_deletions
 
 
-def remove_duplicate_pairs(G: graph, logger: Logger) -> tuple[graph, bool, int]:
+def remove_duplicate_pairs(
+    G: SimpleGraph, logger: Logger
+) -> tuple[SimpleGraph, bool, int]:
     """
     Removes all pairs of adjacent vertices with the same neighbors.
     """

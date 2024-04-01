@@ -1,5 +1,6 @@
 """
-Functions for computing the MSR bounds for a batch of graphs with multiprocessing.
+Functions for computing the MSR bounds for a batch of graphs with
+multiprocessing.
 """
 
 import multiprocessing
@@ -7,7 +8,7 @@ import multiprocessing
 from tqdm import tqdm
 
 from .graph.file_io import SAVED_GRAPH_DIR, files_in_directory, load_graph
-from .graph.graph import graph
+from .graph.graph import SimpleGraph
 from .msr_bounds import msr_bounds
 
 
@@ -22,8 +23,7 @@ def msr_batch_from_directory(
     filenames = files_in_directory(path, num_verts)
     if quiet:
         return _msr_batch_from_directory_quiet(filenames)
-    else:
-        return _msr_batch_from_directory_loud(filenames)
+    return _msr_batch_from_directory_loud(filenames)
 
 
 def _msr_batch_from_directory_loud(
@@ -56,31 +56,33 @@ def _msr_bounds_with_id_from_file(filename: str) -> tuple[int, int, str]:
 
 
 def msr_batch(
-    graphs: list[graph], quiet: bool = False
+    graphs: list[SimpleGraph], quiet: bool = False
 ) -> list[tuple[int, int, str]]:
     """Computes the MSR bounds for a batch of graphs with multiprocessing."""
     if quiet:
         return _msr_batch_quiet(graphs)
-    else:
-        return _msr_batch_loud(graphs)
+    return _msr_batch_loud(graphs)
 
 
-def _msr_batch_loud(graphs: list[graph]) -> list[tuple[int, int, str]]:
+def _msr_batch_loud(graphs: list[SimpleGraph]) -> list[tuple[int, int, str]]:
     """Uses tqdm to show progress."""
-    N = len(graphs)
+    num_graphs = len(graphs)
     with multiprocessing.Pool() as pool:
         return list(
-            tqdm(pool.imap_unordered(_msr_bounds_with_id, graphs), total=N)
+            tqdm(
+                pool.imap_unordered(_msr_bounds_with_id, graphs),
+                total=num_graphs,
+            )
         )
 
 
-def _msr_batch_quiet(graphs: list[graph]) -> list[tuple[int, int, str]]:
+def _msr_batch_quiet(graphs: list[SimpleGraph]) -> list[tuple[int, int, str]]:
     """Does not use tqdm to show progress."""
     with multiprocessing.Pool() as pool:
         return list(pool.imap_unordered(_msr_bounds_with_id, graphs))
 
 
-def _msr_bounds_with_id(G: graph) -> tuple[int, int, str]:
+def _msr_bounds_with_id(G: SimpleGraph) -> tuple[int, int, str]:
     """Helper function for msr_batch."""
     d_lo, d_hi = msr_bounds(G)
-    return d_lo, d_hi, G.id()
+    return d_lo, d_hi, G.hash_id()

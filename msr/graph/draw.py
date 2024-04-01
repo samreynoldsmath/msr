@@ -9,11 +9,11 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 from .embed import embed
-from .graph import graph
+from .graph import SimpleGraph
 
 
 def draw_graphs(
-    graphs: list[graph],
+    graphs: list[SimpleGraph],
     embedding: str = "circular",
     labels=False,
     directory: str = "",
@@ -39,14 +39,14 @@ def draw_graphs(
         )
 
 
-def _draw_graph(args: tuple[graph, str, bool, str]) -> None:
+def _draw_graph(args: tuple[SimpleGraph, str, bool, str]) -> None:
     """Draws a graph."""
     G, embedding, labels, filename = args
     draw_graph(G, embedding, labels, filename)
 
 
 def draw_graph(
-    G: graph,
+    G: SimpleGraph,
     embedding: str = "circular",
     labels=False,
     filename: str = "",

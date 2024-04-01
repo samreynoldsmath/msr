@@ -9,10 +9,10 @@ import os
 from itertools import permutations
 from logging import Logger
 
-from .graph.graph import graph
+from .graph.graph import SimpleGraph
 
 
-def isomorphism_equivalence_class(G: graph) -> set[int]:
+def isomorphism_equivalence_class(G: SimpleGraph) -> set[int]:
     """
     Returns the isomorphism equivalence class of a graph.
     """
@@ -23,7 +23,7 @@ def isomorphism_equivalence_class(G: graph) -> set[int]:
     return hashes
 
 
-def isomorphism_equivalence_class_representative(G: graph) -> int:
+def isomorphism_equivalence_class_representative(G: SimpleGraph) -> int:
     """
     Returns the representative of the isomorphism equivalence class of a graph.
     """
@@ -44,7 +44,7 @@ def soln_directory(num_verts: int, num_edges) -> str:
     return os.path.dirname(__file__) + f"/soln/n{num_verts}/e{num_edges}/"
 
 
-def bounds_filename(G: graph) -> str:
+def bounds_filename(G: SimpleGraph) -> str:
     """
     Returns the filename where the MSR bounds for a graph are saved.
     """
@@ -55,20 +55,22 @@ def bounds_filename(G: graph) -> str:
     return os.path.abspath(directory + str(h) + ".json")
 
 
-def save_msr_bounds(G: graph, d_lo: int, d_hi: int, logger: Logger) -> None:
+def save_msr_bounds(
+    G: SimpleGraph, d_lo: int, d_hi: int, logger: Logger
+) -> None:
     """
     Saves the MSR bounds for a graph to a file.
     """
     if d_lo > d_hi:
         logger.warning("d_lo > d_hi, not saving bounds")
         return
-    logger.info(f"saving bounds {d_lo}, {d_hi} for {G.id()}")
+    logger.info(f"saving bounds {d_lo}, {d_hi} for {G.hash_id()}")
     filename = bounds_filename(G)
-    with open(filename, "w") as f:
+    with open(filename, "w", encoding="utf-8") as f:
         json.dump({"d_lo": int(d_lo), "d_hi": int(d_hi)}, f)
 
 
-def load_msr_bounds(G: graph, logger: Logger) -> tuple[int, int]:
+def load_msr_bounds(G: SimpleGraph, logger: Logger) -> tuple[int, int]:
     """
     Loads the MSR bounds for a graph from a file, if it exists.
     """
@@ -77,7 +79,7 @@ def load_msr_bounds(G: graph, logger: Logger) -> tuple[int, int]:
         logger.info("no saved bounds found, returning 0, n")
         return 0, G.num_verts
     logger.info(f"loading bounds from {filename}")
-    with open(filename, "r") as f:
+    with open(filename, "r", encoding="utf-8") as f:
         data = json.load(f)
         d_lo = data["d_lo"]
         d_hi = data["d_hi"]

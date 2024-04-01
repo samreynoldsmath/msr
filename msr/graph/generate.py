@@ -10,7 +10,7 @@ from typing import Optional
 import tqdm
 
 from .file_io import SAVED_GRAPH_DIR, save_graphs
-from .graph import graph
+from .graph import SimpleGraph
 
 
 def generate_and_save_all_graphs_on_n_vertices(
@@ -23,25 +23,25 @@ def generate_and_save_all_graphs_on_n_vertices(
     save_graphs(graphs, path)
 
 
-def generate_all_graphs_on_n_vertices(n: int) -> list[graph]:
+def generate_all_graphs_on_n_vertices(n: int) -> list[SimpleGraph]:
     """
     Generates all graphs on n vertices by constructing all graphs isomorphic to
     G and testing if any of these graphs have been seen.
 
-    Idea from https://stackoverflow.com/questions/71597789/generate-all-digraphs-of-a-given-size-up-to-isomorphism
+    See doc/MISC.md for a link to the StackOverflow post that inspired this.
     """
 
     num_candidates = 2 ** (n * (n - 1) // 2)
 
     found_hashes: set[int] = set()
-    encountered: list[bool] = list([False for _ in range(num_candidates)])
+    encountered: list[bool] = [False for _ in range(num_candidates)]
 
     # hash each graph as an integer k, such that k written in binary represents
     # the edges of the graph, with zero being a non-edge, and one being an edge.
     for k in tqdm.tqdm(range(num_candidates)):
         if encountered[k]:
             continue
-        G = graph(num_verts=n)
+        G = SimpleGraph(num_verts=n)
         G.build_from_hash(k)
         if G.num_edges() < n - 1:
             continue
@@ -54,7 +54,7 @@ def generate_all_graphs_on_n_vertices(n: int) -> list[graph]:
     # reconstruct graphs from hashes
     graphs = []
     for k in found_hashes:
-        G = graph(num_verts=n)
+        G = SimpleGraph(num_verts=n)
         G.build_from_hash(k)
         if G.is_connected():
             graphs.append(G)
@@ -69,7 +69,9 @@ def generate_all_graphs_on_n_vertices(n: int) -> list[graph]:
     return graphs
 
 
-def is_not_new_graph(G: graph, found_hashes: set[int]) -> tuple[bool, set[int]]:
+def is_not_new_graph(
+    G: SimpleGraph, found_hashes: set[int]
+) -> tuple[bool, set[int]]:
     """Determines if a graph G is isomorphic to a graph in found_hashes."""
     seen = set()
     perms = permutations(range(G.num_verts))
@@ -80,13 +82,13 @@ def is_not_new_graph(G: graph, found_hashes: set[int]) -> tuple[bool, set[int]]:
             [(G, perm, found_hashes) for perm in perms],
             chunksize=max(10, num_perms // 128),
         )
-    is_not_new = any([H_is_not_new for _, H_is_not_new in res])
+    is_not_new = any(H_is_not_new for _, H_is_not_new in res)
     seen = set(k for k, _ in res)
     return is_not_new, seen
 
 
 def is_not_new_graph_worker(
-    G: graph, perm: list[int], found_hashes: set[int]
+    G: SimpleGraph, perm: list[int], found_hashes: set[int]
 ) -> tuple[int, bool]:
     """
     Permute the vertices of G and check if the resulting graph is in

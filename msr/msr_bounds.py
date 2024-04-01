@@ -7,8 +7,8 @@ from typing import Callable
 
 from numpy import zeros
 
-from .context_manager import context_manager
-from .graph import graph
+from .context_manager import GraphBoundsContextManager
+from .graph import SimpleGraph
 from .msr_lookup import load_msr_bounds, save_msr_bounds
 from .msr_sdp import (
     msr_sdp_signed_cycle_search,
@@ -17,43 +17,49 @@ from .msr_sdp import (
     msr_sdp_upper_bound,
 )
 from .reduce import reduce
-from .strategy_config import STRATEGY, msr_strategy
+from .strategy_config import STRATEGY, BoundsStrategy
 
 
-def build_strategy_dict() -> (
-    dict[str, Callable[[graph, context_manager], context_manager]]
-):
+def build_strategy_dict() -> dict[
+    str,
+    Callable[
+        [SimpleGraph, GraphBoundsContextManager], GraphBoundsContextManager
+    ],
+]:
     """
     Builds a dictionary of functions for computing bounds on dim(G). Each
     function takes a graph G and a context manager and returns a context manager
     with updated bounds and exit flag.
     """
     strategy_dict: dict[
-        str, Callable[[graph, context_manager], context_manager]
+        str,
+        Callable[
+            [SimpleGraph, GraphBoundsContextManager], GraphBoundsContextManager
+        ],
     ] = {
-        msr_strategy.BCD_LOWER_EXHAUSTIVE.value: _bcd_bounds_exhaustive,
-        msr_strategy.BCD_LOWER.value: _bcd_max_indp_set,
-        msr_strategy.BCD_UPPER.value: _bcd_upper_bound,
-        msr_strategy.CLIQUE_UPPER.value: _upper_bound_from_cliques,
-        msr_strategy.CUT_VERT.value: _bounds_from_cut_vert_induced_cover,
-        msr_strategy.INDUCED_SUBGRAPH.value: _lower_bound_induced_subgraphs,
-        msr_strategy.EDGE_ADDITION.value: _bounds_from_edge_addition,
-        msr_strategy.EDGE_REMOVAL.value: _bounds_from_edge_removal,
-        msr_strategy.SDP_SIGNED_CYCLE.value: _sdp_signed_cycle,
-        msr_strategy.SDP_SIGNED_EXHAUSTIVE.value: _sdp_signed_exhaustive,
-        msr_strategy.SDP_SIGNED_SIMPLE.value: _sdp_signed_simple,
-        msr_strategy.SDP_UPPER.value: _sdp_upper,
+        BoundsStrategy.BCD_LOWER_EXHAUSTIVE.value: _bcd_bounds_exhaustive,
+        BoundsStrategy.BCD_LOWER.value: _bcd_max_indp_set,
+        BoundsStrategy.BCD_UPPER.value: _bcd_upper_bound,
+        BoundsStrategy.CLIQUE_UPPER.value: _upper_bound_from_cliques,
+        BoundsStrategy.CUT_VERT.value: _bounds_from_cut_vert_induced_cover,
+        BoundsStrategy.INDUCED_SUBGRAPH.value: _lower_bound_induced_subgraphs,
+        BoundsStrategy.EDGE_ADDITION.value: _bounds_from_edge_addition,
+        BoundsStrategy.EDGE_REMOVAL.value: _bounds_from_edge_removal,
+        BoundsStrategy.SDP_SIGNED_CYCLE.value: _sdp_signed_cycle,
+        BoundsStrategy.SDP_SIGNED_EXHAUSTIVE.value: _sdp_signed_exhaustive,
+        BoundsStrategy.SDP_SIGNED_SIMPLE.value: _sdp_signed_simple,
+        BoundsStrategy.SDP_UPPER.value: _sdp_upper,
     }
     return strategy_dict
 
 
-def msr_bounds(G: graph, **kwargs) -> tuple[int, int]:
+def msr_bounds(G: SimpleGraph, **kwargs) -> tuple[int, int]:
     """
     Returns bounds on msr(G) using a recursive algorithm.
 
     Keyword arguments:
     - log_path:         path to log file (default: "msr/log")
-    - log_filename:     name of log file (default: G.id() + ".log"
+    - log_filename:     name of log file (default: G.hash_id() + ".log"
     - log_level:        logging level (default: logging.ERROR)
     - max_depth:        maximum recursion depth (default: 10 * G.num_verts)
     - load_bounds:      load bounds from file (default: True)
@@ -61,7 +67,9 @@ def msr_bounds(G: graph, **kwargs) -> tuple[int, int]:
     """
 
     # configure context manager and start new log
-    ctx = context_manager(num_verts=G.num_verts, graph_id=G.id(), **kwargs)
+    ctx = GraphBoundsContextManager(
+        num_verts=G.num_verts, graph_id=G.hash_id(), **kwargs
+    )
     ctx.start_new_log(graph_str=str(G))
 
     # find number of isolated vertices
@@ -78,7 +86,9 @@ def msr_bounds(G: graph, **kwargs) -> tuple[int, int]:
     return d_lo, d_hi
 
 
-def _dim_bounds(G: graph, parent_ctx: context_manager) -> context_manager:
+def _dim_bounds(
+    G: SimpleGraph, parent_ctx: GraphBoundsContextManager
+) -> GraphBoundsContextManager:
     """
     Returns bounds dim(G), where G is a simple undirected graph, and
     dim(G) = msr(G) + the number of isolated vertices. Equivalently, dim(G) is
@@ -132,7 +142,9 @@ def _dim_bounds(G: graph, parent_ctx: context_manager) -> context_manager:
     return ctx
 
 
-def _dim_bounds_simple(G: graph, ctx: context_manager) -> context_manager:
+def _dim_bounds_simple(
+    G: SimpleGraph, ctx: GraphBoundsContextManager
+) -> GraphBoundsContextManager:
     """
     Gets bounds on dim(G) by counting edges, degrees, and checking connectivity.
     Returns the bounds and a flag that indicates if the program is ready to
@@ -178,8 +190,8 @@ def _dim_bounds_simple(G: graph, ctx: context_manager) -> context_manager:
 
 
 def _get_bounds_on_components(
-    G: graph, ctx: context_manager
-) -> context_manager:
+    G: SimpleGraph, ctx: GraphBoundsContextManager
+) -> GraphBoundsContextManager:
     """
     Computes bounds on dim(G) by summing bounds on components of G.
     """
@@ -207,8 +219,8 @@ def _get_bounds_on_components(
 
 
 def _reduce_and_bound_reduction(
-    G: graph, ctx: context_manager
-) -> tuple[graph, context_manager]:
+    G: SimpleGraph, ctx: GraphBoundsContextManager
+) -> tuple[SimpleGraph, GraphBoundsContextManager]:
     """
     Performs the reduction G |-> H and returns H and bounds on dim(H).
 
@@ -218,7 +230,8 @@ def _reduce_and_bound_reduction(
     If the reduction is nontrivial, we get bounds on the reduced graph using
     simple methods. (This includes using advanced methods on the components of
     the reduced graph, if it is disconnected.) If this fails to get tight
-    bounds, we will attempt advanced strategies after returning to _dim_bounds().
+    bounds, we will attempt advanced strategies after returning to
+    _dim_bounds().
     """
 
     # reduce the graph
@@ -244,8 +257,8 @@ def _reduce_and_bound_reduction(
 
 
 def _lower_bound_induced_subgraphs(
-    G: graph, ctx: context_manager
-) -> context_manager:
+    G: SimpleGraph, ctx: GraphBoundsContextManager
+) -> GraphBoundsContextManager:
     """
     Returns the maximum lower bound of the dimension of any induced subgraph.
     """
@@ -266,8 +279,8 @@ def _lower_bound_induced_subgraphs(
 
 
 def _bounds_from_cut_vert_induced_cover(
-    G: graph, ctx: context_manager
-) -> context_manager:
+    G: SimpleGraph, ctx: GraphBoundsContextManager
+) -> GraphBoundsContextManager:
     """
     Checks if G has a cut vertex. If so, generate a proper induced cover
     {G_1, G_2} such that G_1 and G_2 intersect at exactly one vertex. Then it
@@ -290,8 +303,8 @@ def _bounds_from_cut_vert_induced_cover(
     # determine dim(G_i) for each G_i in the cover, sum bounds
     d_lo_cover = 0
     d_hi_cover = 0
-    for Gi in cover:
-        subgraph_ctx = _dim_bounds(Gi, ctx)
+    for G_i in cover:
+        subgraph_ctx = _dim_bounds(G_i, ctx)
         d_lo_cover += subgraph_ctx.d_lo
         d_hi_cover += subgraph_ctx.d_hi
     ctx.update_bounds(d_lo_cover, d_hi_cover)
@@ -299,8 +312,8 @@ def _bounds_from_cut_vert_induced_cover(
 
 
 def _upper_bound_from_cliques(
-    G: graph, ctx: context_manager
-) -> context_manager:
+    G: SimpleGraph, ctx: GraphBoundsContextManager
+) -> GraphBoundsContextManager:
     """
     Returns an upper bound on dim(G) by locating a vertex i that is part of a
     clique and obtaining a proper induced cover {K, H}, where K is the clique
@@ -310,8 +323,13 @@ def _upper_bound_from_cliques(
     ctx.logger.info("checking bounds from cliques")
     d_hi_cliques = G.num_verts
     for i in range(G.num_verts):
-        N = G.vert_neighbors(i)
-        if all(G.is_edge(j, k) for j in N for k in N if j != k):
+        neighborhood = G.vert_neighbors(i)
+        if all(
+            G.is_edge(j, k)
+            for j in neighborhood
+            for k in neighborhood
+            if j != k
+        ):
             H = copy(G)
             H.remove_vert(i)
             subgraph_ctx = _dim_bounds(H, ctx)
@@ -324,8 +342,8 @@ def _upper_bound_from_cliques(
 
 
 def _bounds_from_edge_addition(
-    G: graph, ctx: context_manager
-) -> context_manager:
+    G: SimpleGraph, ctx: GraphBoundsContextManager
+) -> GraphBoundsContextManager:
     """
     Computes bounds on dim(G) by adding edges.
 
@@ -340,7 +358,7 @@ def _bounds_from_edge_addition(
 
     # sort vertices in descending order by degree
     perm = list(range(G.num_verts))
-    perm.sort(key=lambda i: G.vert_deg(i), reverse=True)
+    perm.sort(key=G.vert_deg, reverse=True)
     G.permute_verts(perm)
 
     # add edges
@@ -366,8 +384,8 @@ def _bounds_from_edge_addition(
 
 
 def _bounds_from_edge_removal(
-    G: graph, ctx: context_manager
-) -> context_manager:
+    G: SimpleGraph, ctx: GraphBoundsContextManager
+) -> GraphBoundsContextManager:
     """
     Computes bounds on dim(G) by removing edges.
 
@@ -382,7 +400,7 @@ def _bounds_from_edge_removal(
 
     # sort vertices in ascending order by degree
     perm = list(range(G.num_verts))
-    perm.sort(key=lambda i: G.vert_deg(i))
+    perm.sort(key=G.vert_deg)
     G.permute_verts(perm)
 
     # remove edges
@@ -407,7 +425,9 @@ def _bounds_from_edge_removal(
     return ctx
 
 
-def _bcd_max_indp_set(G: graph, ctx: context_manager) -> context_manager:
+def _bcd_max_indp_set(
+    G: SimpleGraph, ctx: GraphBoundsContextManager
+) -> GraphBoundsContextManager:
     """
     Computes a lower bound on dim(G) by finding a maximum independent set and
     applying bridge-correction decomposition.
@@ -416,12 +436,14 @@ def _bcd_max_indp_set(G: graph, ctx: context_manager) -> context_manager:
     ctx.logger.info("starting BCD search")
 
     # find a maximum independent set
-    R = G.maximum_independent_set()
+    max_indp_set = G.maximum_independent_set()
 
-    return _bcd_bounds(G, R, ctx)
+    return _bcd_bounds(G, max_indp_set, ctx)
 
 
-def _bcd_bounds_exhaustive(G: graph, ctx: context_manager) -> context_manager:
+def _bcd_bounds_exhaustive(
+    G: SimpleGraph, ctx: GraphBoundsContextManager
+) -> GraphBoundsContextManager:
     """
     Computes a lower bound on dim(G) by applying bridge-correction decomposition
     to every independent set.
@@ -430,15 +452,15 @@ def _bcd_bounds_exhaustive(G: graph, ctx: context_manager) -> context_manager:
     ctx.logger.info("starting exhaustive BCD search")
 
     # obtain all independent sets
-    R_list = G.independent_sets()
+    max_indp_set_list = G.independent_sets()
 
     # sort list of independent sets by size in descending order
-    R_list.sort(key=lambda R: len(R), reverse=True)
+    max_indp_set_list.sort(key=len, reverse=True)
 
     # find a maximum independent set
-    for R in R_list:
+    for max_indp_set in max_indp_set_list:
         # apply BCD
-        ctx = _bcd_bounds(G, R, ctx)
+        ctx = _bcd_bounds(G, max_indp_set, ctx)
 
         # update lower bound
         if ctx.check_bounds("exhaustive BCD search"):
@@ -448,16 +470,18 @@ def _bcd_bounds_exhaustive(G: graph, ctx: context_manager) -> context_manager:
     return ctx
 
 
-def _bcd_bounds(G: graph, R: set[int], ctx: context_manager) -> context_manager:
+def _bcd_bounds(
+    G: SimpleGraph, max_indp_set: set[int], ctx: GraphBoundsContextManager
+) -> GraphBoundsContextManager:
     """
     Computes a lower bound on dim(G) by finding an independent set and applying
     bridge-correction decomposition.
     """
 
-    m = len(R)
+    m = len(max_indp_set)
 
     # compute correction number
-    xi = _correction_number(G, R, ctx)
+    xi = _correction_number(G, max_indp_set, ctx)
 
     # compute lower bound
     d_lo = xi + m
@@ -470,13 +494,15 @@ def _bcd_bounds(G: graph, R: set[int], ctx: context_manager) -> context_manager:
     return ctx
 
 
-def _correction_number(G: graph, R: set[int], ctx: context_manager) -> int:
+def _correction_number(
+    G: SimpleGraph, max_indp_set: set[int], ctx: GraphBoundsContextManager
+) -> int:
     """
     Computes the correction number of G with respect to an independent set R.
     """
 
     # sizes
-    m = len(R)
+    m = len(max_indp_set)
     n = G.num_verts
     b = n - m
 
@@ -486,39 +512,39 @@ def _correction_number(G: graph, R: set[int], ctx: context_manager) -> int:
         return 0
 
     # sort R in descending order to avoid index issues
-    R_list: list[int] = list(R)
-    R_list.sort(reverse=True)
+    max_indp_set_list: list[int] = list(max_indp_set)
+    max_indp_set_list.sort(reverse=True)
 
     # target graph
     H_T = copy(G)
-    for i in R_list:
+    for i in max_indp_set_list:
         H_T.remove_vert(i)
 
     # complement of independent set
-    V_minus_R = [i for i in range(n) if i not in R_list]
+    remaining_verts = [i for i in range(n) if i not in max_indp_set_list]
 
     # bridge matrix
-    B = zeros((m, b), dtype=int)
+    bridge_mat = zeros((m, b), dtype=int)
     for i in range(m):
         for j in range(b):
-            if G.is_edge(R_list[i], V_minus_R[j]):
-                B[i, j] = 1
+            if G.is_edge(max_indp_set_list[i], remaining_verts[j]):
+                bridge_mat[i, j] = 1
 
     # bridge generalized adjacency matrix
-    BtB = B.T @ B
+    gen_adj_mat = bridge_mat.T @ bridge_mat
 
     # bridge graphs
-    H_B = graph(b)
-    H_BO = graph(b)
+    H_B = SimpleGraph(b)
+    H_BO = SimpleGraph(b)
     for i in range(b):
         for j in range(i + 1, b):
-            if BtB[i, j] == 1:
+            if gen_adj_mat[i, j] == 1:
                 H_B.add_edge(i, j)
-            if BtB[i, j] > 1:
+            if gen_adj_mat[i, j] > 1:
                 H_BO.add_edge(i, j)
 
     # correction graphs
-    H_C = graph(b)
+    H_C = SimpleGraph(b)
     H_CO = copy(H_BO)
     for i in range(b):
         for j in range(i + 1, b):
@@ -564,7 +590,9 @@ def _correction_number(G: graph, R: set[int], ctx: context_manager) -> int:
     return xi
 
 
-def _bcd_upper_bound(G: graph, ctx: context_manager) -> context_manager:
+def _bcd_upper_bound(
+    G: SimpleGraph, ctx: GraphBoundsContextManager
+) -> GraphBoundsContextManager:
     """
     !!! UNSTABLE
     Obtains an upper bound on dim(G) by treating it as a target graph of a
@@ -585,13 +613,13 @@ def _bcd_upper_bound(G: graph, ctx: context_manager) -> context_manager:
 
     d_hi_bcd = n
     for i in range(G.num_verts):
-        N = G.vert_neighbors(i)
+        neighborhood = G.vert_neighbors(i)
 
         # clique discovery
         # TODO: this is suboptimal
         clique = set([i])
-        for j in N:
-            if all([G.is_edge(j, k) for k in clique]):
+        for j in neighborhood:
+            if all(G.is_edge(j, k) for k in clique):
                 clique.add(j)
 
         # apply BCD
@@ -613,14 +641,18 @@ def _bcd_upper_bound(G: graph, ctx: context_manager) -> context_manager:
     return ctx
 
 
-def _sdp_upper(G: graph, ctx: context_manager) -> context_manager:
+def _sdp_upper(
+    G: SimpleGraph, ctx: GraphBoundsContextManager
+) -> GraphBoundsContextManager:
     """Wrapper for msr_sdp_upper_bound()"""
     d_hi = msr_sdp_upper_bound(G, ctx.logger)
     ctx.update_upper_bound(d_hi)
     return ctx
 
 
-def _sdp_signed_cycle(G: graph, ctx: context_manager) -> context_manager:
+def _sdp_signed_cycle(
+    G: SimpleGraph, ctx: GraphBoundsContextManager
+) -> GraphBoundsContextManager:
     """
     Wrapper for msr_sdp_signed_cycle_search()
     """
@@ -629,7 +661,9 @@ def _sdp_signed_cycle(G: graph, ctx: context_manager) -> context_manager:
     return ctx
 
 
-def _sdp_signed_exhaustive(G: graph, ctx: context_manager) -> context_manager:
+def _sdp_signed_exhaustive(
+    G: SimpleGraph, ctx: GraphBoundsContextManager
+) -> GraphBoundsContextManager:
     """
     Wrapper for msr_sdp_signed_exhaustive()
     """
@@ -638,7 +672,9 @@ def _sdp_signed_exhaustive(G: graph, ctx: context_manager) -> context_manager:
     return ctx
 
 
-def _sdp_signed_simple(G: graph, ctx: context_manager) -> context_manager:
+def _sdp_signed_simple(
+    G: SimpleGraph, ctx: GraphBoundsContextManager
+) -> GraphBoundsContextManager:
     """
     Wrapper for msr_sdp_signed_simple()
     """

@@ -24,6 +24,7 @@
 - [ ] configure logger at runtime
 
 ## Unit tests
+- [ ] tests should generate their own graphs
 - [ ] Graph functionality
   - [ ] Add / remove edges
   - [ ] Add / remove vertices

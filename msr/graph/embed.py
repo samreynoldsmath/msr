@@ -2,15 +2,15 @@
 Module for embedding graphs in the plane.
 """
 
-from numpy import cos, ndarray, pi, sin, sqrt, sum, zeros
-from numpy.linalg import eig
-from numpy.random import random
+import numpy as np
 
-from .graph import graph
+from .graph import SimpleGraph
 
 
-def embed(G: graph, embedding: str) -> tuple[ndarray, ndarray, float]:
-    """Embeds G in the plane using a specified embedding."""
+def embed(
+    G: SimpleGraph, embedding: str
+) -> tuple[np.ndarray, np.ndarray, float]:
+    """Embeds G in the plane using adj_mat specified embedding."""
     if embedding == "circular":
         x, y = circular_embedding(G)
     if embedding == "random":
@@ -30,36 +30,36 @@ def embed(G: graph, embedding: str) -> tuple[ndarray, ndarray, float]:
         for j in range(G.num_verts):
             x_ij = x[i] - x[j]
             y_ij = y[i] - y[j]
-            diam = max(diam, sqrt(x_ij**2 + y_ij**2))
+            diam = max(diam, np.sqrt(x_ij**2 + y_ij**2))
 
     return x, y, diam
 
 
-def circular_embedding(G: graph) -> tuple[ndarray, ndarray]:
+def circular_embedding(G: SimpleGraph) -> tuple[np.ndarray, np.ndarray]:
     """
-    Embeds G in the plane using a circular embedding.
+    Embeds G in the plane using adj_mat circular embedding.
     """
     n = G.num_verts
-    theta = 2 * pi / n
-    x = zeros((n,))
-    y = zeros((n,))
+    theta = 2 * np.pi / n
+    x = np.zeros((n,))
+    y = np.zeros((n,))
     for i in range(G.num_verts):
-        x[i] = cos(i * theta)
-        y[i] = sin(i * theta)
+        x[i] = np.cos(i * theta)
+        y[i] = np.sin(i * theta)
     return x, y
 
 
-def random_embedding(G: graph) -> tuple[ndarray, ndarray]:
+def random_embedding(G: SimpleGraph) -> tuple[np.ndarray, np.ndarray]:
     """
-    Embeds G in the plane using a random embedding.
+    Embeds G in the plane using adj_mat random embedding.
     """
     n = G.num_verts
-    x = 2 * random((n,)) - 1
-    y = 2 * random((n,)) - 1
+    x = 2 * np.random.random((n,)) - 1
+    y = 2 * np.random.random((n,)) - 1
     return x, y
 
 
-def rubber_electric_embedding(G: graph) -> tuple[ndarray, ndarray]:
+def rubber_electric_embedding(G: SimpleGraph) -> tuple[np.ndarray, np.ndarray]:
     """
     Returns an embedding of G in the plane that minimizes the entropy of the
     edge lengths, which are imagined to be rubber bands, and a repulsive force
@@ -79,23 +79,23 @@ def rubber_electric_embedding(G: graph) -> tuple[ndarray, ndarray]:
 
     x, y = random_embedding(G)
 
-    dx = zeros((n,))
-    dy = zeros((n,))
+    dx = np.zeros((n,))
+    dy = np.zeros((n,))
 
-    ddx = zeros((n,))
-    ddy = zeros((n,))
+    ddx = np.zeros((n,))
+    ddy = np.zeros((n,))
 
-    L = G.laplacian()
+    lap_mat = G.laplacian()
 
-    for iter in range(max_iter):
+    for _ in range(max_iter):
         # update acceleration
         ddx, ddy = _coulomb_repulsive_force(x, y)
 
         ddx *= electric_constant
         ddy *= electric_constant
 
-        ddx -= spring_constant * L @ x
-        ddy -= spring_constant * L @ y
+        ddx -= spring_constant * lap_mat @ x
+        ddy -= spring_constant * lap_mat @ y
 
         ddx -= friction_constant * dx
         ddy -= friction_constant * dy
@@ -119,10 +119,12 @@ def rubber_electric_embedding(G: graph) -> tuple[ndarray, ndarray]:
     return x, y
 
 
-def _coulomb_repulsive_force(x: ndarray, y: ndarray) -> tuple[ndarray, ndarray]:
+def _coulomb_repulsive_force(
+    x: np.ndarray, y: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
     n = len(x)
-    force_x = zeros((n,))
-    force_y = zeros((n,))
+    force_x = np.zeros((n,))
+    force_y = np.zeros((n,))
     for i in range(n):
         for j in range(n):
             if i == j:
@@ -136,7 +138,7 @@ def _coulomb_repulsive_force(x: ndarray, y: ndarray) -> tuple[ndarray, ndarray]:
     return force_x, force_y
 
 
-def spring_embedding(G: graph) -> tuple[ndarray, ndarray]:
+def spring_embedding(G: SimpleGraph) -> tuple[np.ndarray, np.ndarray]:
     """
     Returns an embedding of G in the plane that minimizes the entropy of the
     edge lengths, which are imagined to be springs.
@@ -152,16 +154,16 @@ def spring_embedding(G: graph) -> tuple[ndarray, ndarray]:
     friction_constant = 0.2
     x, y = random_embedding(G)
 
-    dx = zeros((n,))
-    dy = zeros((n,))
+    dx = np.zeros((n,))
+    dy = np.zeros((n,))
 
-    ddx = zeros((n,))
-    ddy = zeros((n,))
+    ddx = np.zeros((n,))
+    ddy = np.zeros((n,))
 
-    A = G.adjacency_matrix()
+    adj_mat = G.adjacency_matrix()
 
-    for iter in range(max_iter):
-        ddx, ddy = _spring_force(x, y, A, spring_constant)
+    for _ in range(max_iter):
+        ddx, ddy = _spring_force(x, y, adj_mat, spring_constant)
 
         ddx -= friction_constant * dx
         ddy -= friction_constant * dy
@@ -187,18 +189,18 @@ def spring_embedding(G: graph) -> tuple[ndarray, ndarray]:
 
 
 def _spring_force(
-    x: ndarray, y: ndarray, A: ndarray, spring_constant: float
-) -> tuple[ndarray, ndarray]:
+    x: np.ndarray, y: np.ndarray, adj_mat: np.ndarray, spring_constant: float
+) -> tuple[np.ndarray, np.ndarray]:
     n = len(x)
-    force_x = zeros((n,))
-    force_y = zeros((n,))
+    force_x = np.zeros((n,))
+    force_y = np.zeros((n,))
     for i in range(n):
         for j in range(n):
-            if A[i, j] == 0:
+            if adj_mat[i, j] == 0:
                 continue
             x_ij = x[i] - x[j]
             y_ij = y[i] - y[j]
-            r = sqrt(x_ij**2 + y_ij**2)
+            r = np.sqrt(x_ij**2 + y_ij**2)
             r = max(1e-12, r)  # avoid division by zero
             d = spring_constant * (1 / r - 1)
             force_x[i] += d * x_ij
@@ -206,12 +208,12 @@ def _spring_force(
     return force_x, force_y
 
 
-def spectral_embedding(G: graph) -> tuple[ndarray, ndarray]:
+def spectral_embedding(G: SimpleGraph) -> tuple[np.ndarray, np.ndarray]:
     """
     Embeds G in the plane using the eigenvectors of the Laplacian matrix.
     """
-    L = G.laplacian()
-    vals, vecs = eig(L)
+    lap_mat = G.laplacian()
+    vals, vecs = np.linalg.eig(lap_mat)
     idx = vals.argsort()
     vals = vals[idx]
     vecs = vecs[:, idx]

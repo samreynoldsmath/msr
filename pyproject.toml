@@ -1,0 +1,59 @@
+[tool.poetry]
+name = "msr"
+version = "0.5.2"
+authors = ["Sam Reynolds <sreyn@proton.me>"]
+description = "Tools to compute the minimum semidefinite rank of a simple undirected graph."
+readme = "README.md"
+license = "MIT"
+packages = [{include = "msr"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+cvxpy = "^1.3"
+matplotlib = "^3.7"
+networkx = "^3.1"
+numpy = "^1.25"
+
+[tool.poetry.dev-dependencies]
+black = "^24.3"
+isort = "^5.13"
+pytest = "^8.1"
+mypy = "^1.9"
+pre-commit = "^3.7"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[project]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/samreynoldsmath/msr"
+Issues = "https://github.com/samreynoldsmath/msr/issues"
+
+[tool.black]
+line-length = 80
+
+[tool.pytest.ini_options]
+filterwarnings = ["error"]
+
+[tool.pylint."messages control"]
+max-line-length = 80
+disable = [
+  "fixme", # reenable to find TODO comments
+  "too-many-public-methods", # who cares
+  "too-few-public-methods", # who cares
+  "too-many-arguments", # who cares
+  "too-many-locals", # who cares
+  "too-many-branches", # who cares
+  "too-many-statements", # who cares
+  "too-many-return-statements", # who cares
+  "too-many-instance-attributes", # who cares
+]
+good-names = ["G", "H", "A", "B", "X", "S"]
+good-names-rgxs = ["G_.*", "H_.*", "A_.*", "B_.*", "X_.*", "S_.*"]
