@@ -1,12 +1,15 @@
-import sys
-import os
+"""
+test_graph.py
+=============
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+Tests for the graph module.
+"""
 
-import msr
+import msr  # pylint: disable=import-error
 
 
 def test_hash():
+    """Test that the hash function is correct."""
     n = 5
     n_choose_2 = n * (n - 1) // 2
     num_graphs = 2**n_choose_2
