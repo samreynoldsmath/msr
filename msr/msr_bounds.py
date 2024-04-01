@@ -303,8 +303,8 @@ def _bounds_from_cut_vert_induced_cover(
     # determine dim(G_i) for each G_i in the cover, sum bounds
     d_lo_cover = 0
     d_hi_cover = 0
-    for Gi in cover:
-        subgraph_ctx = _dim_bounds(Gi, ctx)
+    for G_i in cover:
+        subgraph_ctx = _dim_bounds(G_i, ctx)
         d_lo_cover += subgraph_ctx.d_lo
         d_hi_cover += subgraph_ctx.d_hi
     ctx.update_bounds(d_lo_cover, d_hi_cover)
@@ -323,8 +323,13 @@ def _upper_bound_from_cliques(
     ctx.logger.info("checking bounds from cliques")
     d_hi_cliques = G.num_verts
     for i in range(G.num_verts):
-        N = G.vert_neighbors(i)
-        if all(G.is_edge(j, k) for j in N for k in N if j != k):
+        neighborhood = G.vert_neighbors(i)
+        if all(
+            G.is_edge(j, k)
+            for j in neighborhood
+            for k in neighborhood
+            if j != k
+        ):
             H = copy(G)
             H.remove_vert(i)
             subgraph_ctx = _dim_bounds(H, ctx)
@@ -431,9 +436,9 @@ def _bcd_max_indp_set(
     ctx.logger.info("starting BCD search")
 
     # find a maximum independent set
-    R = G.maximum_independent_set()
+    max_indp_set = G.maximum_independent_set()
 
-    return _bcd_bounds(G, R, ctx)
+    return _bcd_bounds(G, max_indp_set, ctx)
 
 
 def _bcd_bounds_exhaustive(
@@ -447,15 +452,15 @@ def _bcd_bounds_exhaustive(
     ctx.logger.info("starting exhaustive BCD search")
 
     # obtain all independent sets
-    R_list = G.independent_sets()
+    max_indp_set_list = G.independent_sets()
 
     # sort list of independent sets by size in descending order
-    R_list.sort(key=len, reverse=True)
+    max_indp_set_list.sort(key=len, reverse=True)
 
     # find a maximum independent set
-    for R in R_list:
+    for max_indp_set in max_indp_set_list:
         # apply BCD
-        ctx = _bcd_bounds(G, R, ctx)
+        ctx = _bcd_bounds(G, max_indp_set, ctx)
 
         # update lower bound
         if ctx.check_bounds("exhaustive BCD search"):
@@ -466,17 +471,17 @@ def _bcd_bounds_exhaustive(
 
 
 def _bcd_bounds(
-    G: SimpleGraph, R: set[int], ctx: GraphBoundsContextManager
+    G: SimpleGraph, max_indp_set: set[int], ctx: GraphBoundsContextManager
 ) -> GraphBoundsContextManager:
     """
     Computes a lower bound on dim(G) by finding an independent set and applying
     bridge-correction decomposition.
     """
 
-    m = len(R)
+    m = len(max_indp_set)
 
     # compute correction number
-    xi = _correction_number(G, R, ctx)
+    xi = _correction_number(G, max_indp_set, ctx)
 
     # compute lower bound
     d_lo = xi + m
@@ -490,14 +495,14 @@ def _bcd_bounds(
 
 
 def _correction_number(
-    G: SimpleGraph, R: set[int], ctx: GraphBoundsContextManager
+    G: SimpleGraph, max_indp_set: set[int], ctx: GraphBoundsContextManager
 ) -> int:
     """
     Computes the correction number of G with respect to an independent set R.
     """
 
     # sizes
-    m = len(R)
+    m = len(max_indp_set)
     n = G.num_verts
     b = n - m
 
@@ -507,35 +512,35 @@ def _correction_number(
         return 0
 
     # sort R in descending order to avoid index issues
-    R_list: list[int] = list(R)
-    R_list.sort(reverse=True)
+    max_indp_set_list: list[int] = list(max_indp_set)
+    max_indp_set_list.sort(reverse=True)
 
     # target graph
     H_T = copy(G)
-    for i in R_list:
+    for i in max_indp_set_list:
         H_T.remove_vert(i)
 
     # complement of independent set
-    V_minus_R = [i for i in range(n) if i not in R_list]
+    remaining_verts = [i for i in range(n) if i not in max_indp_set_list]
 
     # bridge matrix
-    B = zeros((m, b), dtype=int)
+    bridge_mat = zeros((m, b), dtype=int)
     for i in range(m):
         for j in range(b):
-            if G.is_edge(R_list[i], V_minus_R[j]):
-                B[i, j] = 1
+            if G.is_edge(max_indp_set_list[i], remaining_verts[j]):
+                bridge_mat[i, j] = 1
 
     # bridge generalized adjacency matrix
-    BtB = B.T @ B
+    gen_adj_mat = bridge_mat.T @ bridge_mat
 
     # bridge graphs
     H_B = SimpleGraph(b)
     H_BO = SimpleGraph(b)
     for i in range(b):
         for j in range(i + 1, b):
-            if BtB[i, j] == 1:
+            if gen_adj_mat[i, j] == 1:
                 H_B.add_edge(i, j)
-            if BtB[i, j] > 1:
+            if gen_adj_mat[i, j] > 1:
                 H_BO.add_edge(i, j)
 
     # correction graphs
@@ -608,12 +613,12 @@ def _bcd_upper_bound(
 
     d_hi_bcd = n
     for i in range(G.num_verts):
-        N = G.vert_neighbors(i)
+        neighborhood = G.vert_neighbors(i)
 
         # clique discovery
         # TODO: this is suboptimal
         clique = set([i])
-        for j in N:
+        for j in neighborhood:
             if all(G.is_edge(j, k) for k in clique):
                 clique.add(j)
 
