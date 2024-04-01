@@ -23,7 +23,7 @@ import cvxpy as cp
 from numpy import ndarray, sign, sqrt, zeros
 from numpy.linalg import norm, svd
 
-from .graph.graph import graph, UndirectedEdge
+from .graph.graph import SimpleGraph, UndirectedEdge
 
 
 def msr_sdp_signed(
@@ -114,7 +114,9 @@ def _have_same_non_diagonal_sign_pattern(
     return True
 
 
-def msr_sdp_upper_bound(G: graph, logger: Logger, tol: float = 1e-4) -> int:
+def msr_sdp_upper_bound(
+    G: SimpleGraph, logger: Logger, tol: float = 1e-4
+) -> int:
     """
     Uses all positive edge signs to find an upper bound on msr(G).
     """
@@ -125,7 +127,9 @@ def msr_sdp_upper_bound(G: graph, logger: Logger, tol: float = 1e-4) -> int:
     return msr_sdp_signed(A, logger, tol)
 
 
-def msr_sdp_signed_simple(G: graph, d_lo: int, logger: Logger, tol=1e-4) -> int:
+def msr_sdp_signed_simple(
+    G: SimpleGraph, d_lo: int, logger: Logger, tol=1e-4
+) -> int:
     """
     Flips sign of each edge in turn to find the minimum rank of a positive
     semidefinite generalized adjacency matrix.
@@ -156,7 +160,7 @@ def msr_sdp_signed_simple(G: graph, d_lo: int, logger: Logger, tol=1e-4) -> int:
 
 
 def msr_sdp_signed_cycle_search(
-    G: graph, d_lo: int, logger: Logger, tol=1e-4
+    G: SimpleGraph, d_lo: int, logger: Logger, tol=1e-4
 ) -> int:
     """
     Flips sign of each edge in turn to find the minimum rank of a positive
@@ -194,7 +198,7 @@ def msr_sdp_signed_cycle_search(
     return d_hi
 
 
-def _edges_in_induced_even_cycle(G: graph) -> list[UndirectedEdge]:
+def _edges_in_induced_even_cycle(G: SimpleGraph) -> list[UndirectedEdge]:
     """Returns set of edges in an induced even cycle."""
     n = G.num_verts
     max_num_verts_induced_cycle = 2 * (n // 2)
@@ -215,7 +219,7 @@ def _edges_in_induced_even_cycle(G: graph) -> list[UndirectedEdge]:
 
 
 def msr_sdp_signed_exhaustive(
-    G: graph, d_lo: int, logger: Logger, tol=1e-4
+    G: SimpleGraph, d_lo: int, logger: Logger, tol=1e-4
 ) -> int:
     """
     Searches over all possible edge signs to find the minimum rank of a

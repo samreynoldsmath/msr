@@ -13,7 +13,7 @@ from .file_io import (
     save_graph,
 )
 from .generate import generate_and_save_all_graphs_on_n_vertices
-from .graph import graph
+from .graph import SimpleGraph
 from .graph_lib import (
     complete,
     cycle,
@@ -31,7 +31,7 @@ __all__ = [
     "draw_graph",
     "draw_graphs",
     "generate_and_save_all_graphs_on_n_vertices",
-    "graph",
+    "SimpleGraph",
     "load_graph",
     "load_graphs_from_directory",
     "save_graph",

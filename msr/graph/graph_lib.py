@@ -2,16 +2,16 @@
 Module for specific graphs, such as the complete graph, path graph, etc.
 """
 
-from .graph import graph
+from .graph import SimpleGraph
 
 ### variable number of vertices ###############################################
 
 
-def empty(num_vert: int) -> graph:
-    return graph(num_vert)
+def empty(num_vert: int) -> SimpleGraph:
+    return SimpleGraph(num_vert)
 
 
-def complete(num_vert: int) -> graph:
+def complete(num_vert: int) -> SimpleGraph:
     G = empty(num_vert)
     for i in range(num_vert):
         for j in range(i + 1, num_vert):
@@ -19,20 +19,20 @@ def complete(num_vert: int) -> graph:
     return G
 
 
-def path(num_vert: int) -> graph:
+def path(num_vert: int) -> SimpleGraph:
     G = empty(num_vert)
     for i in range(num_vert - 1):
         G.add_edge(i, i + 1)
     return G
 
 
-def cycle(num_vert: int) -> graph:
+def cycle(num_vert: int) -> SimpleGraph:
     G = path(num_vert)
     G.add_edge(0, num_vert - 1)
     return G
 
 
-def wheel(num_vert: int) -> graph:
+def wheel(num_vert: int) -> SimpleGraph:
     G = cycle(num_vert - 1)
     G.set_num_verts(num_vert)
     for i in range(num_vert - 1):
@@ -40,7 +40,7 @@ def wheel(num_vert: int) -> graph:
     return G
 
 
-def star(num_vert: int) -> graph:
+def star(num_vert: int) -> SimpleGraph:
     G = empty(num_vert)
     for i in range(num_vert - 1):
         G.add_edge(i, num_vert - 1)
@@ -50,13 +50,13 @@ def star(num_vert: int) -> graph:
 ### fixed number of vertices ##################################################
 
 
-def house() -> graph:
+def house() -> SimpleGraph:
     G = cycle(num_vert=5)
     G.add_edge(1, 4)
     return G
 
 
-def petersen() -> graph:
+def petersen() -> SimpleGraph:
     G = empty(num_vert=10)
     for i in range(5):
         G.add_edge(i, (i + 1) % 5)
@@ -65,7 +65,7 @@ def petersen() -> graph:
     return G
 
 
-def triforce() -> graph:
+def triforce() -> SimpleGraph:
     G = cycle(num_vert=6)
     G.add_edge(0, 2)
     G.add_edge(2, 4)

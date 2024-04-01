@@ -5,7 +5,7 @@ Module for loading and saving graphs to disk.
 import json
 import os
 
-from .graph import graph
+from .graph import SimpleGraph
 
 SAVED_GRAPH_DIR = os.path.dirname(__file__) + "/saved/"
 
@@ -25,7 +25,7 @@ def files_in_directory(path: str, num_verts=0) -> list[str]:
     return filenames
 
 
-def load_graph(filename: str) -> graph:
+def load_graph(filename: str) -> SimpleGraph:
     """Load a graph from a json file."""
 
     # load graph data from json file
@@ -33,7 +33,7 @@ def load_graph(filename: str) -> graph:
         data = json.load(f)
 
     # create graph object
-    G = graph(data["num_verts"])
+    G = SimpleGraph(data["num_verts"])
 
     # add edges
     for i, j in data["edges"]:
@@ -44,7 +44,7 @@ def load_graph(filename: str) -> graph:
 
 def load_graphs_from_directory(
     path: str = SAVED_GRAPH_DIR, num_verts=0
-) -> list[graph]:
+) -> list[SimpleGraph]:
     """Load all graphs from a directory."""
     filenames = files_in_directory(path, num_verts)
     graphs = []
@@ -54,7 +54,7 @@ def load_graphs_from_directory(
     return graphs
 
 
-def save_graph(G: graph, filename: str = "") -> None:
+def save_graph(G: SimpleGraph, filename: str = "") -> None:
     """Save a graph to a json file."""
     if len(filename) == 0:
         filename = SAVED_GRAPH_DIR + f"{G.hash_id()}.graph"
@@ -69,7 +69,7 @@ def save_graph(G: graph, filename: str = "") -> None:
     _custom_json_dump(data, filename)
 
 
-def save_graphs(graphs: list[graph], path: str = SAVED_GRAPH_DIR) -> None:
+def save_graphs(graphs: list[SimpleGraph], path: str = SAVED_GRAPH_DIR) -> None:
     """Saves graphs to disk."""
 
     # create directory if none exists

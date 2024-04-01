@@ -44,7 +44,7 @@ class UndirectedEdge:
         self.endpoints = {i, j}
 
 
-class graph:
+class SimpleGraph:
     """A simple undirected graph."""
 
     num_verts: int
@@ -70,7 +70,7 @@ class graph:
         return str(self)
 
     def __copy__(self):
-        G = graph(self.num_verts)
+        G = SimpleGraph(self.num_verts)
         G.edges = self.edges.copy()
         return G
 
@@ -152,7 +152,7 @@ class graph:
         """Returns the number of isolated vertices in the graph."""
         return len([i for i in range(self.num_verts) if self.vert_deg(i) == 0])
 
-    def permute_verts(self, perm: list[int]) -> graph:
+    def permute_verts(self, perm: list[int]) -> SimpleGraph:
         """ "
         Returns a graph with vertices permuted according to the given list.
         """
@@ -160,7 +160,7 @@ class graph:
             raise ValueError(
                 "Permutation list must be a permutation of the" + " vertices."
             )
-        H = graph(self.num_verts)
+        H = SimpleGraph(self.num_verts)
         for e in self.edges:
             i, j = e.endpoints
             H.add_edge(perm[i], perm[j])
@@ -183,9 +183,14 @@ class graph:
 
     ### INDEPENDENT SETS ######################################################
 
-    def is_independent_set(self, S: set[int]) -> bool:
+    def is_independent_set(self, vert_idx_set: set[int]) -> bool:
         """Returns True if S is an independent set."""
-        return all(not self.is_edge(i, j) for i in S for j in S if i != j)
+        return all(
+            not self.is_edge(i, j)
+            for i in vert_idx_set
+            for j in vert_idx_set
+            if i != j
+        )
 
     def maximal_independent_set(self) -> set[int]:
         """
@@ -207,8 +212,8 @@ class graph:
 
             # remove i and its neighbors from the set of candidates
             candidates.remove(i)
-            N = self.vert_neighbors(i)
-            for j in N:
+            neighborhood = self.vert_neighbors(i)
+            for j in neighborhood:
                 candidates.discard(j)
 
         return indep_set
@@ -269,11 +274,11 @@ class graph:
         """Returns True if i,j are adjacent and have the same neighbors."""
         if not self.is_edge(i, j):
             return False
-        Ni = self.vert_neighbors(i)
-        Ni.remove(j)
-        Nj = self.vert_neighbors(j)
-        Nj.remove(i)
-        return Ni == Nj
+        neighborhood_i = self.vert_neighbors(i)
+        neighborhood_i.remove(j)
+        neighborhood_j = self.vert_neighbors(j)
+        neighborhood_j.remove(i)
+        return neighborhood_i == neighborhood_j
 
     def vert_is_cut_vert(self, i: int) -> bool:
         """Returns True if the given vertex is a cut vertex."""
@@ -307,11 +312,11 @@ class graph:
 
     ### INDUCED SUBGRAPHS #####################################################
 
-    def induced_subgraph(self, vert_set: set[int]) -> graph:
+    def induced_subgraph(self, vert_set: set[int]) -> SimpleGraph:
         """
         Returns the induced subgraph on the given set of vertices.
         """
-        H = graph(len(vert_set))
+        H = SimpleGraph(len(vert_set))
         vert_list = list(vert_set)
         for i in range(len(vert_set)):
             for j in range(i + 1, len(vert_set)):
@@ -321,7 +326,7 @@ class graph:
 
     ### COMPONENTS ############################################################
 
-    def connected_components(self) -> list[graph]:
+    def connected_components(self) -> list[SimpleGraph]:
         """
         Returns a list of graph objects, where each object is
         a connected component of the graph.
@@ -331,7 +336,7 @@ class graph:
         for verts in component_vert_idx:
             num_verts = len(verts)
             verts_list = list(verts)
-            H = graph(num_verts)
+            H = SimpleGraph(num_verts)
             for i in range(num_verts):
                 for j in range(i + 1, num_verts):
                     if self.is_edge(verts_list[i], verts_list[j]):
@@ -384,7 +389,7 @@ class graph:
 
     ### INDUCED COVERS ########################################################
 
-    def get_induced_cover_from_cut_vert(self) -> list[graph]:
+    def get_induced_cover_from_cut_vert(self) -> list[SimpleGraph]:
         """
         Returns a list of induced subgraphs, where any two distinct subgraphs
         intersect at a single vertex (which is necessarily a cut vertex).
@@ -404,7 +409,7 @@ class graph:
             num_verts = len(verts)
             verts_list = list(verts)
             verts_list.append(cut_vert_idx)
-            H = graph(num_verts)
+            H = SimpleGraph(num_verts)
             for i in range(num_verts):
                 for j in range(i + 1, num_verts):
                     if self.is_edge(verts_list[i], verts_list[j]):
@@ -457,21 +462,21 @@ class graph:
     def adjacency_matrix(self) -> ndarray:
         """Returns the graph Laplacian matrix."""
         n = self.num_verts
-        A = zeros((n, n), dtype=int)
+        adj_mat = zeros((n, n), dtype=int)
         for e in self.edges:
             i, j = e.endpoints
-            A[i, j] = 1
-            A[j, i] = 1
-        return A
+            adj_mat[i, j] = 1
+            adj_mat[j, i] = 1
+        return adj_mat
 
     def laplacian(self) -> ndarray:
         """Returns the graph Laplacian matrix."""
         n = self.num_verts
-        L = zeros((n, n), dtype=int)
+        lap_mat = zeros((n, n), dtype=int)
         for e in self.edges:
             i, j = e.endpoints
-            L[i, j] = -1
-            L[j, i] = -1
-            L[i, i] += 1
-            L[j, j] += 1
-        return L
+            lap_mat[i, j] = -1
+            lap_mat[j, i] = -1
+            lap_mat[i, i] += 1
+            lap_mat[j, j] += 1
+        return lap_mat

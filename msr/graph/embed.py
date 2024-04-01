@@ -4,10 +4,12 @@ Module for embedding graphs in the plane.
 
 import numpy as np
 
-from .graph import graph
+from .graph import SimpleGraph
 
 
-def embed(G: graph, embedding: str) -> tuple[np.ndarray, np.ndarray, float]:
+def embed(
+    G: SimpleGraph, embedding: str
+) -> tuple[np.ndarray, np.ndarray, float]:
     """Embeds G in the plane using adj_mat specified embedding."""
     if embedding == "circular":
         x, y = circular_embedding(G)
@@ -33,21 +35,21 @@ def embed(G: graph, embedding: str) -> tuple[np.ndarray, np.ndarray, float]:
     return x, y, diam
 
 
-def circular_embedding(G: graph) -> tuple[np.ndarray, np.ndarray]:
+def circular_embedding(G: SimpleGraph) -> tuple[np.ndarray, np.ndarray]:
     """
     Embeds G in the plane using adj_mat circular embedding.
     """
     n = G.num_verts
     theta = 2 * np.pi / n
-    x = np.np.zeros((n,))
-    y = np.np.zeros((n,))
+    x = np.zeros((n,))
+    y = np.zeros((n,))
     for i in range(G.num_verts):
         x[i] = np.cos(i * theta)
         y[i] = np.sin(i * theta)
     return x, y
 
 
-def random_embedding(G: graph) -> tuple[np.ndarray, np.ndarray]:
+def random_embedding(G: SimpleGraph) -> tuple[np.ndarray, np.ndarray]:
     """
     Embeds G in the plane using adj_mat random embedding.
     """
@@ -57,7 +59,7 @@ def random_embedding(G: graph) -> tuple[np.ndarray, np.ndarray]:
     return x, y
 
 
-def rubber_electric_embedding(G: graph) -> tuple[np.ndarray, np.ndarray]:
+def rubber_electric_embedding(G: SimpleGraph) -> tuple[np.ndarray, np.ndarray]:
     """
     Returns an embedding of G in the plane that minimizes the entropy of the
     edge lengths, which are imagined to be rubber bands, and a repulsive force
@@ -136,7 +138,7 @@ def _coulomb_repulsive_force(
     return force_x, force_y
 
 
-def spring_embedding(G: graph) -> tuple[np.ndarray, np.ndarray]:
+def spring_embedding(G: SimpleGraph) -> tuple[np.ndarray, np.ndarray]:
     """
     Returns an embedding of G in the plane that minimizes the entropy of the
     edge lengths, which are imagined to be springs.
@@ -206,7 +208,7 @@ def _spring_force(
     return force_x, force_y
 
 
-def spectral_embedding(G: graph) -> tuple[np.ndarray, np.ndarray]:
+def spectral_embedding(G: SimpleGraph) -> tuple[np.ndarray, np.ndarray]:
     """
     Embeds G in the plane using the eigenvectors of the Laplacian matrix.
     """

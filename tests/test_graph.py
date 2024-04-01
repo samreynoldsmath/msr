@@ -11,6 +11,6 @@ def test_hash():
     n_choose_2 = n * (n - 1) // 2
     num_graphs = 2**n_choose_2
     for k in range(num_graphs):
-        G = msr.graph.graph(num_verts=n)
+        G = msr.graph.SimpleGraph(num_verts=n)
         G.build_from_hash(k)
         assert hash(G) == k

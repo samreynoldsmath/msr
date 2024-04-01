@@ -2,21 +2,21 @@
 Module for converting between native and networkx graphs.
 """
 
-from networkx import Graph
+from networkx import Graph as NetworkXGraph
 
-from .graph import graph
+from .graph import SimpleGraph
 
 
-def convert_native_to_networkx(G: graph) -> Graph:
-    """Converts a graph to a networkx Graph.
+def convert_native_to_networkx(G: SimpleGraph) -> NetworkXGraph:
+    """Converts a graph to a networkx SimpleGraph.
 
     Args:
             graph (graph): The graph to convert.
 
     Returns:
-            Graph: The converted graph.
+            SimpleGraph: The converted graph.
     """
-    nx_graph = Graph()
+    nx_graph = NetworkXGraph()
     for i in range(G.num_verts):
         nx_graph.add_node(i)
     for edge in G.edges:
@@ -25,16 +25,16 @@ def convert_native_to_networkx(G: graph) -> Graph:
     return nx_graph
 
 
-def convert_networkx_to_native(nx_graph: Graph) -> graph:
-    """Converts a networkx Graph to a graph.
+def convert_networkx_to_native(nx_graph: NetworkXGraph) -> SimpleGraph:
+    """Converts a networkx SimpleGraph to a graph.
 
     Args:
-            nx_graph (Graph): The graph to convert.
+            nx_graph (NetworkXGraph): The graph to convert.
 
     Returns:
             graph: The converted graph.
     """
-    G = graph(nx_graph.number_of_nodes())
+    G = SimpleGraph(nx_graph.number_of_nodes())
     for i in range(G.num_verts):
         for j in nx_graph.neighbors(i):
             G.add_edge(i, j)
