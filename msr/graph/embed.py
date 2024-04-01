@@ -8,7 +8,7 @@ from .graph import graph
 
 
 def embed(G: graph, embedding: str) -> tuple[np.ndarray, np.ndarray, float]:
-    """Embeds G in the plane using a specified embedding."""
+    """Embeds G in the plane using adj_mat specified embedding."""
     if embedding == "circular":
         x, y = circular_embedding(G)
     if embedding == "random":
@@ -35,7 +35,7 @@ def embed(G: graph, embedding: str) -> tuple[np.ndarray, np.ndarray, float]:
 
 def circular_embedding(G: graph) -> tuple[np.ndarray, np.ndarray]:
     """
-    Embeds G in the plane using a circular embedding.
+    Embeds G in the plane using adj_mat circular embedding.
     """
     n = G.num_verts
     theta = 2 * np.pi / n
@@ -49,7 +49,7 @@ def circular_embedding(G: graph) -> tuple[np.ndarray, np.ndarray]:
 
 def random_embedding(G: graph) -> tuple[np.ndarray, np.ndarray]:
     """
-    Embeds G in the plane using a random embedding.
+    Embeds G in the plane using adj_mat random embedding.
     """
     n = G.num_verts
     x = 2 * np.random.random((n,)) - 1
@@ -83,7 +83,7 @@ def rubber_electric_embedding(G: graph) -> tuple[np.ndarray, np.ndarray]:
     ddx = np.zeros((n,))
     ddy = np.zeros((n,))
 
-    L = G.laplacian()
+    lap_mat = G.laplacian()
 
     for _ in range(max_iter):
         # update acceleration
@@ -92,8 +92,8 @@ def rubber_electric_embedding(G: graph) -> tuple[np.ndarray, np.ndarray]:
         ddx *= electric_constant
         ddy *= electric_constant
 
-        ddx -= spring_constant * L @ x
-        ddy -= spring_constant * L @ y
+        ddx -= spring_constant * lap_mat @ x
+        ddy -= spring_constant * lap_mat @ y
 
         ddx -= friction_constant * dx
         ddy -= friction_constant * dy
@@ -158,10 +158,10 @@ def spring_embedding(G: graph) -> tuple[np.ndarray, np.ndarray]:
     ddx = np.zeros((n,))
     ddy = np.zeros((n,))
 
-    A = G.adjacency_matrix()
+    adj_mat = G.adjacency_matrix()
 
     for _ in range(max_iter):
-        ddx, ddy = _spring_force(x, y, A, spring_constant)
+        ddx, ddy = _spring_force(x, y, adj_mat, spring_constant)
 
         ddx -= friction_constant * dx
         ddy -= friction_constant * dy
@@ -187,14 +187,14 @@ def spring_embedding(G: graph) -> tuple[np.ndarray, np.ndarray]:
 
 
 def _spring_force(
-    x: np.ndarray, y: np.ndarray, A: np.ndarray, spring_constant: float
+    x: np.ndarray, y: np.ndarray, adj_mat: np.ndarray, spring_constant: float
 ) -> tuple[np.ndarray, np.ndarray]:
     n = len(x)
     force_x = np.zeros((n,))
     force_y = np.zeros((n,))
     for i in range(n):
         for j in range(n):
-            if A[i, j] == 0:
+            if adj_mat[i, j] == 0:
                 continue
             x_ij = x[i] - x[j]
             y_ij = y[i] - y[j]
@@ -210,8 +210,8 @@ def spectral_embedding(G: graph) -> tuple[np.ndarray, np.ndarray]:
     """
     Embeds G in the plane using the eigenvectors of the Laplacian matrix.
     """
-    L = G.laplacian()
-    vals, vecs = np.linalg.eig(L)
+    lap_mat = G.laplacian()
+    vals, vecs = np.linalg.eig(lap_mat)
     idx = vals.argsort()
     vals = vals[idx]
     vecs = vecs[:, idx]
