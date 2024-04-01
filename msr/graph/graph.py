@@ -10,7 +10,7 @@ from typing import Optional
 from numpy import ndarray, zeros
 
 
-class undirected_edge:
+class UndirectedEdge:
     """An undirected edge between two vertices."""
 
     endpoints: set[int]
@@ -25,7 +25,7 @@ class undirected_edge:
         return str(self)
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, undirected_edge):
+        if not isinstance(other, UndirectedEdge):
             raise TypeError("Can only compare undirected edges.")
         return self.endpoints == other.endpoints
 
@@ -48,7 +48,7 @@ class graph:
     """A simple undirected graph."""
 
     num_verts: int
-    edges: set[undirected_edge]
+    edges: set[UndirectedEdge]
     known_msr: Optional[int]
     _is_connected_flag: Optional[bool]
 
@@ -293,17 +293,17 @@ class graph:
     def add_edge(self, i: int, j: int) -> None:
         if i > self.num_verts or j > self.num_verts:
             raise ValueError("Vertex index out of bounds.")
-        self.edges.add(undirected_edge(i, j))
+        self.edges.add(UndirectedEdge(i, j))
         self._is_connected_flag = None
 
     def remove_edge(self, i: int, j: int) -> None:
-        self.edges.discard(undirected_edge(i, j))
+        self.edges.discard(UndirectedEdge(i, j))
         self._is_connected_flag = None
 
     def is_edge(self, i: int, j: int) -> bool:
         if i == j:
             return False
-        return undirected_edge(i, j) in self.edges
+        return UndirectedEdge(i, j) in self.edges
 
     ### INDUCED SUBGRAPHS #####################################################
 

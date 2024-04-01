@@ -23,7 +23,7 @@ import cvxpy as cp
 from numpy import ndarray, sign, sqrt, zeros
 from numpy.linalg import norm, svd
 
-from .graph.graph import graph, undirected_edge
+from .graph.graph import graph, UndirectedEdge
 
 
 def msr_sdp_signed(
@@ -194,11 +194,11 @@ def msr_sdp_signed_cycle_search(
     return d_hi
 
 
-def _edges_in_induced_even_cycle(G: graph) -> list[undirected_edge]:
+def _edges_in_induced_even_cycle(G: graph) -> list[UndirectedEdge]:
     """Returns set of edges in an induced even cycle."""
     n = G.num_verts
     max_num_verts_induced_cycle = 2 * (n // 2)
-    edges: set[undirected_edge] = set()
+    edges: set[UndirectedEdge] = set()
 
     # loop over induced subgraphs with even number of vertices >= 4
     for m in range(4, max_num_verts_induced_cycle + 1, 2):
@@ -209,7 +209,7 @@ def _edges_in_induced_even_cycle(G: graph) -> list[undirected_edge]:
                 for ij in combinations(vert_set, 2):
                     i, j = ij
                     if G.is_edge(i, j):
-                        edges.add(undirected_edge(i, j))
+                        edges.add(UndirectedEdge(i, j))
 
     return list(edges)
 
