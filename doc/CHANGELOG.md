@@ -1,3 +1,33 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+Bring the project into compliance with `pylint`, `mypy`, and `black` standards, and publish to PyPI.
+
+### Added
+
+- [x] add `pyproject.toml` for project metadata, dependencies, and configuration
+- [x] `doc/MISC.md` for miscellaneous notes
+- [x] add `.pre-commit-config.yaml` for pre-commit hooks
+
+### Changed
+
+- [x] rename variables and functions with descriptive snake_case names (exceptions for `G` and `H` in graph algorithms)
+- [x] rename classes with CapWord names
+- [x] remove unnecessary `else` statements
+- [x] use comprehensions and generator expressions where possible
+- [x] fix imports for unit tests
+
+### Removed
+
+- [x] remove `.pylintrc` in favor of `pyproject.toml`
+
+
 ## [2023 Sep 08] 0.8.1 Context Manager
 - `msr_bounds` now uses a context manager to handle logging, updating bounds, checking recursion depth, etc.
 - Added `pylint` to `requirements-dev.txt`
