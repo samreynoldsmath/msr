@@ -8,10 +8,12 @@ from .graph import SimpleGraph
 
 
 def empty(num_vert: int) -> SimpleGraph:
+    """Return an empty graph with num_vert vertices."""
     return SimpleGraph(num_vert)
 
 
 def complete(num_vert: int) -> SimpleGraph:
+    """Return a complete graph with num_vert vertices."""
     G = empty(num_vert)
     for i in range(num_vert):
         for j in range(i + 1, num_vert):
@@ -20,6 +22,7 @@ def complete(num_vert: int) -> SimpleGraph:
 
 
 def path(num_vert: int) -> SimpleGraph:
+    """Return a path graph with num_vert vertices."""
     G = empty(num_vert)
     for i in range(num_vert - 1):
         G.add_edge(i, i + 1)
@@ -27,12 +30,14 @@ def path(num_vert: int) -> SimpleGraph:
 
 
 def cycle(num_vert: int) -> SimpleGraph:
+    """Return a cycle graph with num_vert vertices."""
     G = path(num_vert)
     G.add_edge(0, num_vert - 1)
     return G
 
 
 def wheel(num_vert: int) -> SimpleGraph:
+    """Return a wheel graph with num_vert vertices."""
     G = cycle(num_vert - 1)
     G.set_num_verts(num_vert)
     for i in range(num_vert - 1):
@@ -41,6 +46,7 @@ def wheel(num_vert: int) -> SimpleGraph:
 
 
 def star(num_vert: int) -> SimpleGraph:
+    """Return a star graph with num_vert vertices."""
     G = empty(num_vert)
     for i in range(num_vert - 1):
         G.add_edge(i, num_vert - 1)
@@ -51,12 +57,14 @@ def star(num_vert: int) -> SimpleGraph:
 
 
 def house() -> SimpleGraph:
+    """Return a house graph."""
     G = cycle(num_vert=5)
     G.add_edge(1, 4)
     return G
 
 
 def petersen() -> SimpleGraph:
+    """Return a Petersen graph."""
     G = empty(num_vert=10)
     for i in range(5):
         G.add_edge(i, (i + 1) % 5)
@@ -66,6 +74,7 @@ def petersen() -> SimpleGraph:
 
 
 def triforce() -> SimpleGraph:
+    """Return a triforce graph."""
     G = cycle(num_vert=6)
     G.add_edge(0, 2)
     G.add_edge(2, 4)

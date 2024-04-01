@@ -8,6 +8,24 @@ from enum import Enum
 
 # Enumeration of strategies for computing bounds on msr(G)
 class BoundsStrategy(Enum):
+    """
+    Enumeration of strategies for computing bounds on msr(G).
+
+    Attributes:
+        BCD_LOWER: Use the BCD lower bound.
+        BCD_LOWER_EXHAUSTIVE: Use the exhaustive BCD lower bound.
+        BCD_UPPER: Use the BCD upper bound.
+        CUT_VERT: Use the cut-vertex bound.
+        CLIQUE_UPPER: Use the clique upper bound.
+        EDGE_ADDITION: Use the edge addition bound.
+        EDGE_REMOVAL: Use the edge removal bound.
+        INDUCED_SUBGRAPH: Use the induced subgraph bound.
+        SDP_UPPER: Use the SDP upper bound.
+        SDP_SIGNED_EXHAUSTIVE: Use the exhaustive SDP signed bound.
+        SDP_SIGNED_SIMPLE: Use the simple SDP signed bound.
+        SDP_SIGNED_CYCLE: Use the SDP signed cycle bound.
+    """
+
     BCD_LOWER = "bcd-lower"
     BCD_LOWER_EXHAUSTIVE = "bcd-lower-exhaustive"
     BCD_UPPER = "bcd-upper"

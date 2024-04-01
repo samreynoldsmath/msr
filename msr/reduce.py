@@ -9,7 +9,7 @@ from .graph.graph import SimpleGraph
 
 
 class ReductionError(Exception):
-    pass
+    """Error raised when reduction fails."""
 
 
 def reduce(G: SimpleGraph, logger: Logger) -> tuple[SimpleGraph, int, int]:
@@ -97,6 +97,9 @@ def reduce(G: SimpleGraph, logger: Logger) -> tuple[SimpleGraph, int, int]:
 def reduction_report(
     deletions: int, d_diff: int, updated: bool, logger: Logger
 ) -> None:
+    """
+    Logs the results of the reduction.
+    """
     if not updated:
         logger.debug("reduction stagnated")
     v = "vertices" if deletions != 1 else "vertex"

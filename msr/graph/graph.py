@@ -87,6 +87,7 @@ class SimpleGraph:
         return int(binary_str, 2)
 
     def hash_id(self) -> str:
+        """Returns a unique identifier for the graph."""
         return f"n{self.num_verts}k{hash(self)}"
 
     ### CONSTRUCTION ##########################################################
@@ -110,6 +111,7 @@ class SimpleGraph:
     ### VERTICES ##############################################################
 
     def set_num_verts(self, num_verts: int) -> None:
+        """Sets the number of vertices in the graph."""
         if num_verts < 1:
             raise ValueError("Must have a positive number of vertices")
         self.num_verts = num_verts
@@ -293,19 +295,23 @@ class SimpleGraph:
     ### EDGES #################################################################
 
     def num_edges(self) -> int:
+        """Returns the number of edges in the graph."""
         return len(self.edges)
 
     def add_edge(self, i: int, j: int) -> None:
+        """Adds an edge between the given vertices."""
         if i > self.num_verts or j > self.num_verts:
             raise ValueError("Vertex index out of bounds.")
         self.edges.add(UndirectedEdge(i, j))
         self._is_connected_flag = None
 
     def remove_edge(self, i: int, j: int) -> None:
+        """Removes the edge between the given vertices."""
         self.edges.discard(UndirectedEdge(i, j))
         self._is_connected_flag = None
 
     def is_edge(self, i: int, j: int) -> bool:
+        """Returns True if there is an edge between the given vertices."""
         if i == j:
             return False
         return UndirectedEdge(i, j) in self.edges
@@ -421,6 +427,7 @@ class SimpleGraph:
     ### GRAPH TESTS ###########################################################
 
     def set_connected_flag(self, flag: bool) -> None:
+        """Sets the connected flag to the given value."""
         self._is_connected_flag = flag
 
     def is_connected(self) -> bool:
