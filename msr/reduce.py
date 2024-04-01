@@ -7,6 +7,9 @@ from logging import Logger
 
 from .graph.graph import graph
 
+class ReductionError(Exception):
+    pass
+
 
 def reduce(G: graph, logger: Logger) -> tuple[graph, int, int]:
     """
@@ -27,7 +30,7 @@ def reduce(G: graph, logger: Logger) -> tuple[graph, int, int]:
     if not G.is_connected():
         msg = "reduction loop assumes G is connected"
         logger.error(msg)
-        raise Exception(msg)
+        raise ReductionError(msg)
 
     logger.info("performing reduction")
 
