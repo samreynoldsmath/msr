@@ -7,7 +7,7 @@ from typing import Callable
 
 from numpy import zeros
 
-from .context_manager import context_manager
+from .context_manager import GraphBoundsContextManager
 from .graph import SimpleGraph
 from .msr_lookup import load_msr_bounds, save_msr_bounds
 from .msr_sdp import (
@@ -20,16 +20,22 @@ from .reduce import reduce
 from .strategy_config import STRATEGY, msr_strategy
 
 
-def build_strategy_dict() -> (
-    dict[str, Callable[[SimpleGraph, context_manager], context_manager]]
-):
+def build_strategy_dict() -> dict[
+    str,
+    Callable[
+        [SimpleGraph, GraphBoundsContextManager], GraphBoundsContextManager
+    ],
+]:
     """
     Builds a dictionary of functions for computing bounds on dim(G). Each
     function takes a graph G and a context manager and returns a context manager
     with updated bounds and exit flag.
     """
     strategy_dict: dict[
-        str, Callable[[SimpleGraph, context_manager], context_manager]
+        str,
+        Callable[
+            [SimpleGraph, GraphBoundsContextManager], GraphBoundsContextManager
+        ],
     ] = {
         msr_strategy.BCD_LOWER_EXHAUSTIVE.value: _bcd_bounds_exhaustive,
         msr_strategy.BCD_LOWER.value: _bcd_max_indp_set,
@@ -61,7 +67,9 @@ def msr_bounds(G: SimpleGraph, **kwargs) -> tuple[int, int]:
     """
 
     # configure context manager and start new log
-    ctx = context_manager(num_verts=G.num_verts, graph_id=G.hash_id(), **kwargs)
+    ctx = GraphBoundsContextManager(
+        num_verts=G.num_verts, graph_id=G.hash_id(), **kwargs
+    )
     ctx.start_new_log(graph_str=str(G))
 
     # find number of isolated vertices
@@ -78,7 +86,9 @@ def msr_bounds(G: SimpleGraph, **kwargs) -> tuple[int, int]:
     return d_lo, d_hi
 
 
-def _dim_bounds(G: SimpleGraph, parent_ctx: context_manager) -> context_manager:
+def _dim_bounds(
+    G: SimpleGraph, parent_ctx: GraphBoundsContextManager
+) -> GraphBoundsContextManager:
     """
     Returns bounds dim(G), where G is a simple undirected graph, and
     dim(G) = msr(G) + the number of isolated vertices. Equivalently, dim(G) is
@@ -132,7 +142,9 @@ def _dim_bounds(G: SimpleGraph, parent_ctx: context_manager) -> context_manager:
     return ctx
 
 
-def _dim_bounds_simple(G: SimpleGraph, ctx: context_manager) -> context_manager:
+def _dim_bounds_simple(
+    G: SimpleGraph, ctx: GraphBoundsContextManager
+) -> GraphBoundsContextManager:
     """
     Gets bounds on dim(G) by counting edges, degrees, and checking connectivity.
     Returns the bounds and a flag that indicates if the program is ready to
@@ -178,8 +190,8 @@ def _dim_bounds_simple(G: SimpleGraph, ctx: context_manager) -> context_manager:
 
 
 def _get_bounds_on_components(
-    G: SimpleGraph, ctx: context_manager
-) -> context_manager:
+    G: SimpleGraph, ctx: GraphBoundsContextManager
+) -> GraphBoundsContextManager:
     """
     Computes bounds on dim(G) by summing bounds on components of G.
     """
@@ -207,8 +219,8 @@ def _get_bounds_on_components(
 
 
 def _reduce_and_bound_reduction(
-    G: SimpleGraph, ctx: context_manager
-) -> tuple[SimpleGraph, context_manager]:
+    G: SimpleGraph, ctx: GraphBoundsContextManager
+) -> tuple[SimpleGraph, GraphBoundsContextManager]:
     """
     Performs the reduction G |-> H and returns H and bounds on dim(H).
 
@@ -245,8 +257,8 @@ def _reduce_and_bound_reduction(
 
 
 def _lower_bound_induced_subgraphs(
-    G: SimpleGraph, ctx: context_manager
-) -> context_manager:
+    G: SimpleGraph, ctx: GraphBoundsContextManager
+) -> GraphBoundsContextManager:
     """
     Returns the maximum lower bound of the dimension of any induced subgraph.
     """
@@ -267,8 +279,8 @@ def _lower_bound_induced_subgraphs(
 
 
 def _bounds_from_cut_vert_induced_cover(
-    G: SimpleGraph, ctx: context_manager
-) -> context_manager:
+    G: SimpleGraph, ctx: GraphBoundsContextManager
+) -> GraphBoundsContextManager:
     """
     Checks if G has a cut vertex. If so, generate a proper induced cover
     {G_1, G_2} such that G_1 and G_2 intersect at exactly one vertex. Then it
@@ -300,8 +312,8 @@ def _bounds_from_cut_vert_induced_cover(
 
 
 def _upper_bound_from_cliques(
-    G: SimpleGraph, ctx: context_manager
-) -> context_manager:
+    G: SimpleGraph, ctx: GraphBoundsContextManager
+) -> GraphBoundsContextManager:
     """
     Returns an upper bound on dim(G) by locating a vertex i that is part of a
     clique and obtaining a proper induced cover {K, H}, where K is the clique
@@ -325,8 +337,8 @@ def _upper_bound_from_cliques(
 
 
 def _bounds_from_edge_addition(
-    G: SimpleGraph, ctx: context_manager
-) -> context_manager:
+    G: SimpleGraph, ctx: GraphBoundsContextManager
+) -> GraphBoundsContextManager:
     """
     Computes bounds on dim(G) by adding edges.
 
@@ -367,8 +379,8 @@ def _bounds_from_edge_addition(
 
 
 def _bounds_from_edge_removal(
-    G: SimpleGraph, ctx: context_manager
-) -> context_manager:
+    G: SimpleGraph, ctx: GraphBoundsContextManager
+) -> GraphBoundsContextManager:
     """
     Computes bounds on dim(G) by removing edges.
 
@@ -408,7 +420,9 @@ def _bounds_from_edge_removal(
     return ctx
 
 
-def _bcd_max_indp_set(G: SimpleGraph, ctx: context_manager) -> context_manager:
+def _bcd_max_indp_set(
+    G: SimpleGraph, ctx: GraphBoundsContextManager
+) -> GraphBoundsContextManager:
     """
     Computes a lower bound on dim(G) by finding a maximum independent set and
     applying bridge-correction decomposition.
@@ -423,8 +437,8 @@ def _bcd_max_indp_set(G: SimpleGraph, ctx: context_manager) -> context_manager:
 
 
 def _bcd_bounds_exhaustive(
-    G: SimpleGraph, ctx: context_manager
-) -> context_manager:
+    G: SimpleGraph, ctx: GraphBoundsContextManager
+) -> GraphBoundsContextManager:
     """
     Computes a lower bound on dim(G) by applying bridge-correction decomposition
     to every independent set.
@@ -452,8 +466,8 @@ def _bcd_bounds_exhaustive(
 
 
 def _bcd_bounds(
-    G: SimpleGraph, R: set[int], ctx: context_manager
-) -> context_manager:
+    G: SimpleGraph, R: set[int], ctx: GraphBoundsContextManager
+) -> GraphBoundsContextManager:
     """
     Computes a lower bound on dim(G) by finding an independent set and applying
     bridge-correction decomposition.
@@ -476,7 +490,7 @@ def _bcd_bounds(
 
 
 def _correction_number(
-    G: SimpleGraph, R: set[int], ctx: context_manager
+    G: SimpleGraph, R: set[int], ctx: GraphBoundsContextManager
 ) -> int:
     """
     Computes the correction number of G with respect to an independent set R.
@@ -571,7 +585,9 @@ def _correction_number(
     return xi
 
 
-def _bcd_upper_bound(G: SimpleGraph, ctx: context_manager) -> context_manager:
+def _bcd_upper_bound(
+    G: SimpleGraph, ctx: GraphBoundsContextManager
+) -> GraphBoundsContextManager:
     """
     !!! UNSTABLE
     Obtains an upper bound on dim(G) by treating it as a target graph of a
@@ -620,14 +636,18 @@ def _bcd_upper_bound(G: SimpleGraph, ctx: context_manager) -> context_manager:
     return ctx
 
 
-def _sdp_upper(G: SimpleGraph, ctx: context_manager) -> context_manager:
+def _sdp_upper(
+    G: SimpleGraph, ctx: GraphBoundsContextManager
+) -> GraphBoundsContextManager:
     """Wrapper for msr_sdp_upper_bound()"""
     d_hi = msr_sdp_upper_bound(G, ctx.logger)
     ctx.update_upper_bound(d_hi)
     return ctx
 
 
-def _sdp_signed_cycle(G: SimpleGraph, ctx: context_manager) -> context_manager:
+def _sdp_signed_cycle(
+    G: SimpleGraph, ctx: GraphBoundsContextManager
+) -> GraphBoundsContextManager:
     """
     Wrapper for msr_sdp_signed_cycle_search()
     """
@@ -637,8 +657,8 @@ def _sdp_signed_cycle(G: SimpleGraph, ctx: context_manager) -> context_manager:
 
 
 def _sdp_signed_exhaustive(
-    G: SimpleGraph, ctx: context_manager
-) -> context_manager:
+    G: SimpleGraph, ctx: GraphBoundsContextManager
+) -> GraphBoundsContextManager:
     """
     Wrapper for msr_sdp_signed_exhaustive()
     """
@@ -647,7 +667,9 @@ def _sdp_signed_exhaustive(
     return ctx
 
 
-def _sdp_signed_simple(G: SimpleGraph, ctx: context_manager) -> context_manager:
+def _sdp_signed_simple(
+    G: SimpleGraph, ctx: GraphBoundsContextManager
+) -> GraphBoundsContextManager:
     """
     Wrapper for msr_sdp_signed_simple()
     """

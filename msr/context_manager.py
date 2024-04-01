@@ -11,7 +11,7 @@ from .log_config import LOG_PATH, configure_logging
 from .strategy_config import STRATEGY, check_strategy
 
 
-class context_manager:
+class GraphBoundsContextManager:
     """
     Context manager for computing bounds on msr(G). Contains
     - current lower bound d_lo
@@ -48,7 +48,7 @@ class context_manager:
             ),
         )
 
-    def child_context(self, num_verts: int) -> context_manager:
+    def child_context(self, num_verts: int) -> GraphBoundsContextManager:
         """Create a child context."""
         child_context = copy(self)
         child_context.depth += 1
