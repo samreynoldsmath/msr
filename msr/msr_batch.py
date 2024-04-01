@@ -66,10 +66,13 @@ def msr_batch(
 
 def _msr_batch_loud(graphs: list[SimpleGraph]) -> list[tuple[int, int, str]]:
     """Uses tqdm to show progress."""
-    N = len(graphs)
+    num_graphs = len(graphs)
     with multiprocessing.Pool() as pool:
         return list(
-            tqdm(pool.imap_unordered(_msr_bounds_with_id, graphs), total=N)
+            tqdm(
+                pool.imap_unordered(_msr_bounds_with_id, graphs),
+                total=num_graphs,
+            )
         )
 
 
