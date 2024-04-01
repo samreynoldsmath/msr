@@ -7,6 +7,7 @@ from logging import Logger
 
 from .graph.graph import graph
 
+
 class ReductionError(Exception):
     pass
 
