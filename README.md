@@ -15,7 +15,7 @@ $ij \in E(G)$. Surprisingly, the graph invariant $\text{msr}(G)$ can often be
 computed only by consideration of the graph structure, without the need to
 actually do any linear algebra.
 
-## Comments
+### Comments
 - This package began as a school project for a course on semidefinite
 	programming (see the
 	[final report](doc/mth610-semidefprog-final-report-reynolds.pdf)).
@@ -27,19 +27,20 @@ actually do any linear algebra.
 - The package is not designed with efficiency in mind, and probably will not
 	scale well to large graphs.
 
+## Installation
+Install the package with pip:
+```bash
+pip install msr
+```
+
 ## Dependencies
 This project is written in Python 3.11 and uses the following packages:
 - [cvxpy](https://www.cvxpy.org/) is used to solve semidefinite programs
 - [matplotlib](https://matplotlib.org/) is used for visualization
 - [networkx](https://networkx.org/) is used for graph isomorphism testing
 - [tqdm](https://tqdm.github.io/) is used for progress bars
-See [requirements.txt](requirements.txt) for a complete list of dependencies.
 
-## Author
-[Sam Reynolds](https://sites.google.com/view/samreynolds)
-is a PhD student studying Mathematical Sciences at
-[Portland State University](https://www.pdx.edu/math/).
+Moreover, examples are written in [Jupyter notebooks](https://jupyter.org/).
 
 ## License
-Copyright (c) 2023 under the
-[MIT license](LICENSE).
+Copyright (c) 2023 -- 2024 Samuel Reynolds, released under the [MIT license](LICENSE).
