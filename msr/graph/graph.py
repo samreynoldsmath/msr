@@ -92,15 +92,28 @@ class SimpleGraph:
 
     ### CONSTRUCTION ##########################################################
 
-    def build_from_hash(self, hash_id: int) -> None:
+    def build_from_hash_str(self, hash_id: str) -> None:
+        """
+        Builds the graph from its hash_id.
+        """
+        # split hash_id into num_verts and hash_id_int
+        if not hash_id.startswith("n"):
+            raise ValueError("Invalid hash_id.")
+        if "k" not in hash_id:
+            raise ValueError("Invalid hash_id.")
+        n_str, hash_id_str = hash_id.split("k")
+        self.set_num_verts(int(n_str[1:]))
+        self.build_from_hash_int(int(hash_id_str))
+
+    def build_from_hash_int(self, hash_id_int: int) -> None:
         """
         Builds the graph from its hash value.
         """
         n = self.num_verts
         n_choose_2 = n * (n - 1) // 2
-        if hash_id < 0 or hash_id >= 2**n_choose_2:
+        if hash_id_int < 0 or hash_id_int >= 2**n_choose_2:
             raise ValueError("Hash value out of bounds.")
-        binary = bin(hash_id)[2:].zfill(n_choose_2)
+        binary = bin(hash_id_int)[2:].zfill(n_choose_2)
         self.edges = set()
         for i in range(n - 1):
             for j in range(i + 1, n):

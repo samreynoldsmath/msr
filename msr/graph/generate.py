@@ -42,7 +42,7 @@ def generate_all_graphs_on_n_vertices(n: int) -> list[SimpleGraph]:
         if encountered[k]:
             continue
         G = SimpleGraph(num_verts=n)
-        G.build_from_hash(k)
+        G.build_from_hash_int(k)
         if G.num_edges() < n - 1:
             continue
         is_not_new, seen = is_not_new_graph(G, found_hashes)
@@ -55,7 +55,7 @@ def generate_all_graphs_on_n_vertices(n: int) -> list[SimpleGraph]:
     graphs = []
     for k in found_hashes:
         G = SimpleGraph(num_verts=n)
-        G.build_from_hash(k)
+        G.build_from_hash_int(k)
         if G.is_connected():
             graphs.append(G)
 
