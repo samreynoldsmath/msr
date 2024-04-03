@@ -12,7 +12,10 @@ from .file_io import (
     load_graphs_from_directory,
     save_graph,
 )
-from .generate import generate_and_save_all_graphs_on_n_vertices
+from .generate import (
+    generate_all_graphs_on_n_vertices,
+    generate_and_save_all_graphs_on_n_vertices,
+)
 from .graph import SimpleGraph
 from .graph_lib import (
     complete,
@@ -30,6 +33,7 @@ from .graph_lib import (
 __all__ = [
     "draw_graph",
     "draw_graphs",
+    "generate_all_graphs_on_n_vertices",
     "generate_and_save_all_graphs_on_n_vertices",
     "SimpleGraph",
     "load_graph",

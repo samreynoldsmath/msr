@@ -11,6 +11,8 @@ from .graph.file_io import SAVED_GRAPH_DIR, files_in_directory, load_graph
 from .graph.graph import SimpleGraph
 from .msr_bounds import msr_bounds
 
+# TODO: batch functions should return lists in the same order as the input list
+
 
 def msr_batch_from_directory(
     path: str = SAVED_GRAPH_DIR,

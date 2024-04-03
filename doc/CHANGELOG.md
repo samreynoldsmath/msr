@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- [x] [Example 2](examples/ex2-all-graphs-on-n-vertices.ipynb) to generate and test all connected graphs on $n$ vertices up to isomorphism
+
+### Changed
+- [x] `generate_all_graphs_on_n_vertices()` added to `graph` init file
+- [x] split `SimpleGraph.build_from_hash()` method into int and str versions
+
+### Fixed
+- [x] Example 1 passes a logger to `msr_sdp_upper_bound()`
+
 ## [0.8.2] - 2024-04-02
 Bring the project into compliance with `pylint`, `mypy`, and `black` standards, and publish to PyPI.
 
