@@ -24,6 +24,8 @@ Bring the project into compliance with `pylint`, `mypy`, and `black` standards, 
 ### Removed
 - [x] remove `.pylintrc` in favor of `pyproject.toml`
 
+### Fixed
+- [x] rename v0.5.2 to v0.8.2 in `CHANGELOG.md`
 
 ## [2023 Sep 08] 0.8.1 Context Manager
 - `msr_bounds` now uses a context manager to handle logging, updating bounds, checking recursion depth, etc.
