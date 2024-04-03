@@ -5,19 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.2] - 2024-04-02
-
+## [0.8.2] - 2024-04-02
 Bring the project into compliance with `pylint`, `mypy`, and `black` standards, and publish to PyPI.
 
 ### Added
-
 - [x] add `pyproject.toml` for project metadata, dependencies, and configuration
 - [x] `doc/MISC.md` for miscellaneous notes
 - [x] add `.pre-commit-config.yaml` for pre-commit hooks
 - [x] add `msr` package to PyPI with `poetry`
 
 ### Changed
-
 - [x] rename variables and functions with descriptive snake_case names (exceptions for `G` and `H` in graph algorithms)
 - [x] rename classes with CapWord names
 - [x] remove unnecessary `else` statements
@@ -25,7 +22,6 @@ Bring the project into compliance with `pylint`, `mypy`, and `black` standards, 
 - [x] fix imports for unit tests
 
 ### Removed
-
 - [x] remove `.pylintrc` in favor of `pyproject.toml`
 
 

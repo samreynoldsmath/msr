@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "msr"
-version = "0.5.2"
+version = "0.8.2"
 authors = ["Sam Reynolds <sreyn@proton.me>"]
 description = "Tools to compute the minimum semidefinite rank of a simple undirected graph."
 readme = "README.md"
