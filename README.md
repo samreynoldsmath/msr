@@ -18,7 +18,7 @@ actually do any linear algebra.
 ### Comments
 - This package began as a school project for a course on semidefinite
 	programming (see the
-	[final report](doc/mth610-semidefprog-final-report-reynolds.pdf)).
+	[final report](https://github.com/samreynoldsmath/msr/tree/main/doc/mth610-semidefprog-final-report-reynolds.pdf)).
  - In addition to SDP, this package also uses combinatorial techniques to
 	compute bounds on the MSR, some of which are well-known in the literature,
 	and some of which are still under development.
@@ -32,9 +32,10 @@ actually do any linear algebra.
 ```bash
 pip install msr
 ```
+Also see the [package website](https://pypi.org/project/msr/)
 ### Install with developer tools
-- Clone this repo (or your fork of it)
-- Activate your virtual environment
+- Fork this repo and clone it to your local machine
+- Create and activate a virtual environment
 - Install developer tools:
   ```bash
   pip install -r requirements.txt
