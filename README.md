@@ -38,7 +38,7 @@ Also see the [package website](https://pypi.org/project/msr/)
 - Create and activate a virtual environment
 - Install developer tools:
   ```bash
-  pip install -r requirements.txt
+  pip install -r requirements-dev.txt
   ```
 - Install the package locally:
   ```bash
