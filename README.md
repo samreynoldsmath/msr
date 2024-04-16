@@ -28,16 +28,28 @@ actually do any linear algebra.
 	scale well to large graphs.
 
 ## Installation
-Install the package with pip:
+### Install from PyPI
 ```bash
 pip install msr
 ```
+### Install with developer tools
+- Clone this repo (or your fork of it)
+- Activate your virtual environment
+- Install developer tools:
+  ```bash
+  pip install -r requirements.txt
+  ```
+- Install the package locally:
+  ```bash
+  pip install -e .
+  ```
 
 ## Dependencies
 This project is written in Python 3.11 and uses the following packages:
 - [cvxpy](https://www.cvxpy.org/) is used to solve semidefinite programs
 - [matplotlib](https://matplotlib.org/) is used for visualization
 - [networkx](https://networkx.org/) is used for graph isomorphism testing
+- [numpy](https://numpy.org) is used for linear algebra and numerics
 - [tqdm](https://tqdm.github.io/) is used for progress bars
 
 Moreover, examples are written in [Jupyter notebooks](https://jupyter.org/).
